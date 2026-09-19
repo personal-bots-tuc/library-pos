@@ -3,8 +3,9 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { authService } from "../hooks/authService";
 import { getPublicSchoolBySlug } from "../api/schools";
+import { DisabledScreen } from "../components/DisabledScreen";
 
-type LoginState = "resolving" | "notFound" | "ready" | "invalidUrl";
+type LoginState = "resolving" | "notFound" | "ready" | "invalidUrl" | "disabled";
 
 function PinInput({ pin, onChange, onKeyDown, loading, autoFocusIndex = 0 }: {
   pin: string[];
@@ -70,6 +71,23 @@ export default function LoginPage() {
   const [state, setState] = useState<LoginState>("resolving");
   const [schoolId, setSchoolId] = useState("");
   const [schoolName, setSchoolName] = useState("");
+  const [showDisabledScreen, setShowDisabledScreen] = useState(false);
+  const [disabledMessage, setDisabledMessage] = useState("");
+  const [disabledDetails, setDisabledDetails] = useState<{ terminalId: string; branchName: string; reason: string } | null>(null);
+
+  function extractErrorInfo(err: unknown): { code?: string; message: string } {
+    if (err && typeof err === 'object' && 'response' in err) {
+      const response = (err as { response?: { data?: { error?: string; message?: string } } }).response;
+      if (response?.data) {
+        return {
+          code: response.data.error,
+          message: response.data.message || 'Error al iniciar sesión',
+        };
+      }
+    }
+    if (err instanceof Error) return { message: err.message };
+    return { message: 'Error al iniciar sesión' };
+  }
 
   useEffect(() => {
     if (!slug) return;
@@ -84,9 +102,21 @@ export default function LoginPage() {
           setSchoolName(school.name);
           setState("ready");
         }
-      } catch {
+      } catch (err) {
         if (!cancelled) {
-          setState("notFound");
+          const { code, message } = extractErrorInfo(err);
+          if (code === 'SCHOOL_DISABLED') {
+            setState("disabled");
+            setDisabledMessage(message);
+            setDisabledDetails({
+              terminalId: 'N/A',
+              branchName: slugValue,
+              reason: 'Escuela deshabilitada por el super administrador',
+            });
+            setShowDisabledScreen(true);
+          } else {
+            setState("notFound");
+          }
         }
       }
     }
@@ -109,9 +139,22 @@ export default function LoginPage() {
       await loginPin(fullPin, schoolId);
       if (slug) authService.setPosAppSlug(slug);
       navigate("/");
-    } catch {
-      setError("PIN incorrecto para este negocio");
-      setPin(["", "", "", ""]);
+    } catch (err) {
+      const { code, message } = extractErrorInfo(err);
+      if (code === 'SCHOOL_DISABLED' || code === 'POS_DISABLED') {
+        setShowDisabledScreen(true);
+        setDisabledMessage(message);
+        setDisabledDetails({
+          terminalId: 'POS-CAJA-01',
+          branchName: schoolName,
+          reason: code === 'SCHOOL_DISABLED'
+            ? 'Escuela deshabilitada por el super administrador'
+            : 'Punto de venta deshabilitado por el administrador',
+        });
+      } else {
+        setError("PIN incorrecto para este negocio");
+        setPin(["", "", "", ""]);
+      }
     } finally {
       setLoading(false);
     }
@@ -134,6 +177,16 @@ export default function LoginPage() {
 
   const pinDisabled = loading;
   const effectiveState: LoginState = !slug ? "invalidUrl" : state;
+
+  if (showDisabledScreen) {
+    return (
+      <DisabledScreen
+        variant="pos"
+        message={disabledMessage}
+        details={disabledDetails ?? undefined}
+      />
+    );
+  }
 
   const renderState = () => {
     switch (effectiveState) {
@@ -176,6 +229,14 @@ export default function LoginPage() {
             {error && <p className="text-center text-red-500 text-sm font-medium">{error}</p>}
             <SubmitButton loading={loading} disabled={pin.join("").length !== 4}>Ingresar</SubmitButton>
           </>
+        );
+      case "disabled":
+        return (
+          <DisabledScreen
+            variant="pos"
+            message={disabledMessage}
+            details={disabledDetails ?? undefined}
+          />
         );
     }
   };
