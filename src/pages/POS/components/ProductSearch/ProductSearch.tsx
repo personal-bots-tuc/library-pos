@@ -16,7 +16,10 @@ export function ProductSearch({
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const filteredProducts = products
-    .filter((p) => p.active && p.name.toLowerCase().includes(search.toLowerCase()))
+    .filter((p) => p.active && (
+      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      p.code?.toLowerCase().includes(search.toLowerCase())
+    ))
     .slice(0, 8);
 
   useEffect(() => {
@@ -145,6 +148,9 @@ export function ProductSearch({
           >
             <span className="font-medium text-neutral-900 truncate">{product.name}</span>
             <span className="flex items-center gap-3 shrink-0">
+              {product.code && (
+                <span className="text-xs text-neutral-400 font-mono">{product.code}</span>
+              )}
               {product.type === "product" && (
                 <span className={`text-xs ${product.stock <= (product.minStock ?? 5) ? "text-warning-600" : "text-neutral-400"}`}>
                   Stock: {product.stock}
@@ -172,7 +178,7 @@ export function ProductSearch({
           ref={inputRef}
           id="product-search"
           type="text"
-          placeholder="Nombre del producto o servicio..."
+          placeholder="Código, nombre o descripción..."
           value={search}
           onChange={(e) => {
             onSearchChange(e.target.value);
