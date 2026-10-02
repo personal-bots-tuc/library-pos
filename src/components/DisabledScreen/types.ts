@@ -1,5 +1,5 @@
 export interface DisabledScreenProps {
-  variant: 'admin' | 'pos';
+  variant: "admin" | "pos";
   title?: string;
   message?: string;
   details?: {
@@ -9,4 +9,6 @@ export interface DisabledScreenProps {
   };
   supportText?: string;
   referenceCode?: string;
+  /** Nombre del negocio (dynamico desde SchoolProvider) */
+  schoolName?: string;
 }

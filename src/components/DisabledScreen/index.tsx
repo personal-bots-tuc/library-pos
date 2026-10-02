@@ -1,11 +1,14 @@
 import type { DisabledScreenProps } from './types';
 import { useId } from 'react';
 
-const getConfig = (variant: 'admin' | 'pos') => {
+const currentYear = new Date().getFullYear();
+
+const getConfig = (variant: 'admin' | 'pos', schoolName?: string) => {
+  const brand = schoolName ?? 'Sistema';
   if (variant === 'admin') {
     return {
       icon: 'admin_panel_settings',
-      brand: 'Library Admin',
+      brand: `${brand} Admin`,
       defaultTitle: 'Acceso al Panel Deshabilitado',
       defaultMessage:
         'Esta escuela ha sido deshabilitada por el super administrador. El acceso al panel de administración se encuentra temporalmente restringido. Tus datos permanecen seguros y guardados.',
@@ -15,7 +18,7 @@ const getConfig = (variant: 'admin' | 'pos') => {
   }
   return {
     icon: 'point_of_sale',
-    brand: 'Library POS',
+    brand: `${brand} POS`,
     defaultTitle: 'Acceso al POS Deshabilitado',
     defaultMessage:
       'Este punto de venta ha sido deshabilitado por el administrador. El acceso al módulo de ventas se encuentra temporalmente restringido. Tus datos permanecen seguros y guardados.',
@@ -31,8 +34,9 @@ export const DisabledScreen = ({
   details,
   supportText,
   referenceCode,
+  schoolName,
 }: DisabledScreenProps) => {
-  const config = getConfig(variant);
+  const config = getConfig(variant, schoolName);
   const stableId = useId(); // ID estable para referenceCode fallback
 
   return (
@@ -62,8 +66,8 @@ export const DisabledScreen = ({
             <div className="mb-6 p-4 bg-neutral-800 rounded-xl text-left border border-neutral-700">
               <dl className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <dt className="text-neutral-500">Terminal</dt>
-                  <dd className="font-mono text-white">{details.terminalId}</dd>
+                  <dt className="text-neutral-500">Negocio</dt>
+                  <dd className="font-mono text-white">{details.branchName}</dd>
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-neutral-500">Sucursal</dt>
@@ -86,7 +90,7 @@ export const DisabledScreen = ({
           </p>
 
           <p className="mt-4 text-center text-xs text-neutral-600">
-            © 2026 Library System · v1.0.0
+            © {currentYear} {config.brand}
           </p>
         </div>
       </div>

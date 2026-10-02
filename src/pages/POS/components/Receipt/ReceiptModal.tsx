@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Modal } from "../Modal/Modal";
+import { useSchool } from "@/hooks/useSchool";
 import type { ReceiptModalProps } from "./types";
 
 const TICKET_CSS = `
@@ -64,6 +65,7 @@ function getNumberDisplay(number: number, type: "sale" | "quote" | "return"): st
 
 export function ReceiptModal({ isOpen, onClose, onConfirm, receipt }: ReceiptModalProps) {
   const ticketRef = useRef<HTMLDivElement>(null);
+  const { schoolName } = useSchool();
 
   const handlePrint = () => {
     if (!ticketRef.current) return;
@@ -109,7 +111,7 @@ export function ReceiptModal({ isOpen, onClose, onConfirm, receipt }: ReceiptMod
     <Modal title="" isOpen={isOpen} onClose={onClose} size="lg">
       <div ref={ticketRef} className="ticket max-w-md">
         <div className="header center">
-          <h1 className="bold">Library System</h1>
+          <h1 className="bold">{schoolName}</h1>
           <p>{getTitle(receipt.type)}</p>
           <p className="bold">{getNumberDisplay(receipt.number, receipt.type)}</p>
         </div>

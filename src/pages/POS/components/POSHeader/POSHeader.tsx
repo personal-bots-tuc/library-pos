@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from "../../../../hooks/useAuth";
+import { useSchool } from "../../../../hooks/useSchool";
 import { useCashMovements } from "../../hooks/useCashMovements";
 import type { POSHeaderProps } from "./types";
 import { CashMovementModal } from "../CashMovementModal";
@@ -16,6 +17,7 @@ export function POSHeader({
   setOperation,
 }: POSHeaderProps) {
   const { user } = useAuth();
+  const { schoolName } = useSchool();
   const { aggregated, loading } = useCashMovements(
     activeShift?.id ?? null
   );
@@ -32,7 +34,7 @@ export function POSHeader({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5S19.832 5.477 21 6.253v13C19.832 18.477 18.246 18 16.5 18s-3.332.477-4.5 1.253" />
           </svg>
         </div>
-        <h1 className="text-base font-bold text-neutral-900">POS Biblioteca Escolar</h1>
+        <h1 className="text-base font-bold text-neutral-900">{schoolName} POS</h1>
       </div>
 
       <div className="flex items-center gap-6">

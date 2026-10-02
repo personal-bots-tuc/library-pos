@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, type KeyboardEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { useSchool } from "../hooks/useSchool";
 import { authService } from "../hooks/authService";
 import { getPublicSchoolBySlug } from "../api/schools";
 import { DisabledScreen } from "../components/DisabledScreen";
@@ -61,6 +62,7 @@ function SubmitButton({ loading, disabled, children }: {
 
 export default function LoginPage() {
   const { loginPin } = useAuth();
+  const { schoolName, loading: schoolLoading, setSchoolFromLogin } = useSchool();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const slug = searchParams.get("pos_app");
@@ -70,7 +72,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [state, setState] = useState<LoginState>("resolving");
   const [schoolId, setSchoolId] = useState("");
-  const [schoolName, setSchoolName] = useState("");
   const [showDisabledScreen, setShowDisabledScreen] = useState(false);
   const [disabledMessage, setDisabledMessage] = useState("");
   const [disabledDetails, setDisabledDetails] = useState<{ terminalId: string; branchName: string; reason: string } | null>(null);
@@ -99,7 +100,7 @@ export default function LoginPage() {
         const school = await getPublicSchoolBySlug(slugValue);
         if (!cancelled) {
           setSchoolId(school.id);
-          setSchoolName(school.name);
+          setSchoolFromLogin({ id: school.id, name: school.name, slug: school.slug });
           setState("ready");
         }
       } catch (err) {
@@ -126,7 +127,7 @@ export default function LoginPage() {
     return () => {
       cancelled = true;
     };
-  }, [slug]);
+  }, [slug, setSchoolFromLogin]);
 
   async function handleSubmit(e?: React.FormEvent) {
     e?.preventDefault();
@@ -184,6 +185,7 @@ export default function LoginPage() {
         variant="pos"
         message={disabledMessage}
         details={disabledDetails ?? undefined}
+        schoolName={schoolName}
       />
     );
   }
@@ -223,7 +225,7 @@ export default function LoginPage() {
         return (
           <>
             <p className="text-center text-neutral-300 mb-6">
-              Ingrese su PIN · <strong className="text-white">{schoolName}</strong>
+              Ingrese su PIN · <strong className="text-white">{schoolName !== "Sistema" ? schoolName : "este negocio"}</strong>
             </p>
             <PinInput pin={pin} onChange={handleChange} onKeyDown={handleKeyDown} loading={pinDisabled} />
             {error && <p className="text-center text-red-500 text-sm font-medium">{error}</p>}
@@ -236,6 +238,7 @@ export default function LoginPage() {
             variant="pos"
             message={disabledMessage}
             details={disabledDetails ?? undefined}
+            schoolName={schoolName}
           />
         );
     }
@@ -250,7 +253,9 @@ export default function LoginPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5S19.832 5.477 21 6.253v13C19.832 18.477 18.246 18 16.5 18s-3.332.477-4.5 1.253" />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Library System</h1>
+          <h1 className="text-3xl font-bold text-white mb-2">
+            {schoolLoading ? "Cargando..." : schoolName}
+          </h1>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
