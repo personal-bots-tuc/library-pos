@@ -1,4 +1,33 @@
-# React + TypeScript + Vite
+# POS - Sistema de Punto de Venta
+
+Sistema de Punto de Venta para la plataforma Library System.
+
+## 🚀 Quick Start
+
+```bash
+npm install
+npm run dev        # Desarrollo local
+npm run build      # Build producción
+npm run preview    # Preview del build
+npm run test:run   # Tests
+npm run lint       # Lint TypeScript
+```
+
+## Stack
+- React 19 + TypeScript + Vite
+- Tailwind CSS
+- Vitest
+
+## 📦 Deploy
+
+Deploy automático a Vercel en push a `master` desde `personal-bots-tuc/library-pos`.
+
+<!-- Validando auto-deploy post-migración a personal-bots-tuc -->
+
+---
+
+<!-- OLD README -->
+### React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
