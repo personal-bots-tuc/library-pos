@@ -74,6 +74,8 @@ jobs:
     runs-on: ubuntu-latest
     environment: staging
     steps:
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
       - name: Deploy to Railway Staging
         run: |
           railway login --token ${{ secrets.RAILWAY_TOKEN }}
@@ -87,6 +89,8 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
       - name: Deploy to Railway Production
         run: |
           railway login --token ${{ secrets.RAILWAY_TOKEN }}
@@ -100,6 +104,8 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
     steps:
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
       - name: Rollback Railway
         run: |
           railway login --token ${{ secrets.RAILWAY_TOKEN }}
