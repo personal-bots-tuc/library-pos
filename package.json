@@ -14,6 +14,7 @@
     "test:coverage": "vitest run --coverage",
     "lint": "eslint src --ext .ts,.tsx",
     "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "lint:ci": "git diff --name-only HEAD~1..HEAD | grep -E '\\.(ts|tsx)$' | xargs -r eslint --ext .ts,.tsx",
     "format": "prettier --write src",
     "prepare": "husky"
   },
@@ -59,5 +60,8 @@
     "typescript-eslint": "^8.67.0",
     "vite": "^8.2.0",
     "vitest": "^4.1.11"
+  },
+  "engines": {
+    "node": ">=22.0.0"
   }
 }

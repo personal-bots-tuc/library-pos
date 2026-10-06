@@ -25,28 +25,28 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>28/28</span>
+                <span class='fraction'>20/20</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>6/6</span>
+                <span class='fraction'>5/5</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>6/6</span>
+                <span class='fraction'>7/7</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>27/27</span>
+                <span class='fraction'>18/18</span>
             </div>
         
             
@@ -134,8 +134,8 @@
 <a name='L69'></a><a href='#L69'>69</a>
 <a name='L70'></a><a href='#L70'>70</a>
 <a name='L71'></a><a href='#L71'>71</a>
-<a name='L72'></a><a href='#L72'>72</a>
-<a name='L73'></a><a href='#L73'>73</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L72'></a><a href='#L72'>72</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -151,37 +151,35 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">21x</span>
 <span class="cline-any cline-yes">21x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">21x</span>
 <span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-yes">8x</span>
-<span class="cline-any cline-yes">8x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -208,53 +206,52 @@
 <span class="cline-any cline-yes">23x</span>
 <span class="cline-any cline-yes">21x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
-import { loginWithPin, loginWithEmail, type AuthUser } from "../api/auth";
+import { authService, type AuthService } from "./authService";
+import type { User } from "@/pages/POS/components/types";
 &nbsp;
 interface AuthContextValue {
-  user: AuthUser | null;
+  user: User | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
-  loginPin: (pin: string) =&gt; Promise&lt;void&gt;;
-  loginEmail: (email: string, password: string) =&gt; Promise&lt;void&gt;;
+  loginPin: (_pin: string, _schoolId: string) =&gt; Promise&lt;void&gt;;
+  loginEmail: (_email: string, _password: string) =&gt; Promise&lt;void&gt;;
   logout: () =&gt; void;
   loading: boolean;
 }
 &nbsp;
 const AuthContext = createContext&lt;AuthContextValue | undefined&gt;(undefined);
 &nbsp;
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState&lt;AuthUser | null&gt;(null);
+interface AuthProviderProps {
+  children: ReactNode;
+  authService?: AuthService;
+}
+&nbsp;
+function loadInitialUser(service: AuthService): User | null {
+  return service.getStoredUser();
+}
+&nbsp;
+export function AuthProvider({ children, authService: injectedService = authService }: AuthProviderProps) {
+  const [user, setUser] = useState&lt;User | null&gt;(null);
   const [loading, setLoading] = useState(true);
 &nbsp;
   useEffect(() =&gt; {
-    const stored = localStorage.getItem("user");
-    const token = localStorage.getItem("accessToken");
-    if (stored &amp;&amp; token) {
-      setUser(JSON.parse(stored));
-    }
+    const storedUser = loadInitialUser(injectedService);
+    if (storedUser) setUser(storedUser);
     setLoading(false);
-  }, []);
+  }, [injectedService]);
 &nbsp;
-  async function loginPin(pin: string) {
-    const res = await loginWithPin(pin);
-    localStorage.setItem("accessToken", res.accessToken);
-    localStorage.setItem("refreshToken", res.refreshToken);
-    localStorage.setItem("user", JSON.stringify(res.user));
-    setUser(res.user);
+  async function loginPin(pin: string, schoolId: string) {
+    const loggedInUser = await injectedService.loginPin(pin, schoolId);
+    setUser(loggedInUser);
   }
 &nbsp;
   async function loginEmail(email: string, password: string) {
-    const res = await loginWithEmail(email, password);
-    localStorage.setItem("accessToken", res.accessToken);
-    localStorage.setItem("refreshToken", res.refreshToken);
-    localStorage.setItem("user", JSON.stringify(res.user));
-    setUser(res.user);
+    const loggedInUser = await injectedService.loginEmail(email, password);
+    setUser(loggedInUser);
   }
 &nbsp;
   function logout() {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("user");
+    injectedService.logout();
     setUser(null);
   }
 &nbsp;
@@ -286,7 +283,7 @@ export function useAuth() {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-08-20T18:57:54.947Z
+                at 2026-10-06T17:07:54.975Z
             </div>
         <script src="../prettify.js"></script>
         <script>

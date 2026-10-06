@@ -1,0 +1,95 @@
+name: Documentation Freshness Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+    branches: [main, develop]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  doc-freshness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check documentation freshness
+        id: freshness
+        run: |
+          # Guías elegibles para el gate
+          GUIDES=(
+            "docs/agent/overview.md"
+            "docs/agent/architecture.md"
+            "docs/agent/contracts.md"
+            "docs/agent/runbook.md"
+          )
+
+          FAILED=0
+          COMMENT_BODY="## 📚 Documentation Freshness Check\n\n"
+
+          for guide in "${GUIDES[@]}"; do
+            if [[ ! -f "$guide" ]]; then
+              COMMENT_BODY+="❌ **$guide**: MISSING\n"
+              FAILED=1
+              continue
+            fi
+
+            # Extraer scope y version del frontmatter
+            SCOPE=$(grep -A 20 '^scope:' "$guide" | grep '^-' | sed 's/^- //' | tr '\n' ' ')
+            VERSION=$(grep '^version:' "$guide" | head -1 | awk '{print $2}')
+
+            if [[ -z "$SCOPE" ]]; then
+              COMMENT_BODY+="⚠️ **$guide**: No scope defined (skipped)\n"
+              continue
+            fi
+
+            # Verificar si alguna ruta en scope cambió en el PR
+            CHANGED=false
+            for path in $SCOPE; do
+              if git diff --name-only ${{ github.base_ref }}...${{ github.head_ref }} | grep -q "^$path"; then
+                CHANGED=true
+                break
+              fi
+            done
+
+            # Obtener version en base
+            BASE_VERSION=$(git show ${{ github.base_ref }}:"$guide" 2>/dev/null | grep '^version:' | head -1 | awk '{print $2}' || echo "")
+
+            if [[ "$CHANGED" == "true" && "$VERSION" == "$BASE_VERSION" ]]; then
+              COMMENT_BODY+="❌ **$guide**: Code changed under scope but version not updated\n"
+              FAILED=1
+            elif [[ "$CHANGED" == "true" ]]; then
+              COMMENT_BODY+="✅ **$guide**: Code changed, version updated ($VERSION)\n"
+            else
+              COMMENT_BODY+="✅ **$guide**: No changes in scope\n"
+            fi
+          done
+
+          # Verificar label docs-exempt
+          if [[ $FAILED -eq 1 ]]; then
+            LABELS=$(gh pr view ${{ github.event.pull_request.number }} --json labels --jq '.labels[].name' 2>/dev/null || echo "")
+            if echo "$LABELS" | grep -q "docs-exempt"; then
+              COMMENT_BODY+="\n⚠️ **Exception**: \`docs-exempt\` label present - check passed with warning\n"
+              FAILED=0
+            fi
+          fi
+
+          # Post comment
+          gh pr comment ${{ github.event.pull_request.number }} --body "$COMMENT_BODY" 2>/dev/null || true
+
+          if [[ $FAILED -eq 1 ]]; then
+            echo "FAILED=1" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Fail if docs stale
+        if: steps.freshness.outputs.FAILED == '1'
+        run: |
+          echo "::error::Documentation is out of date. Please update affected guides in the same PR."
+          exit 1

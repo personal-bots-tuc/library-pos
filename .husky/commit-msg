@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Validar formato de commit: [TICKET]-descripcion
+commit_msg=$(cat "$1")
+if ! echo "$commit_msg" | grep -qE '^\[[A-Z]+-[0-9]+\]-.+'; then
+  echo "❌ Formato de commit inválido. Usa: [TICKET-123]-descripcion-corta"
+  exit 1
+fi

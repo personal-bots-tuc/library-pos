@@ -1,16 +1,17 @@
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { getPublicSchoolBySlug } from "@/api/schools";
-import { STORAGE_KEYS } from "../../hooks/authService";
-import type { School, SchoolContextValue, SchoolProviderProps } from "./types";
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { getPublicSchoolBySlug } from '@/api/schools';
+import { STORAGE_KEYS } from '../../hooks/authService';
+import type { School, SchoolContextValue, SchoolProviderProps } from './types';
 
 const SchoolContext = createContext<SchoolContextValue | undefined>(undefined);
 
-const DEFAULT_FALLBACK = "Sistema";
+const DEFAULT_FALLBACK = 'Sistema';
 
 export function SchoolProvider({ children, fallbackName = DEFAULT_FALLBACK }: SchoolProviderProps) {
   const [school, setSchool] = useState<School | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const mountedRef = useRef(false);
 
   const fetchSchool = useCallback(async (slug: string) => {
     if (!slug) {
@@ -21,23 +22,43 @@ export function SchoolProvider({ children, fallbackName = DEFAULT_FALLBACK }: Sc
     setError(null);
     try {
       const data = await getPublicSchoolBySlug(slug);
-      setSchool({ id: data.id, name: data.name, slug: data.slug, active: true });
+      if (mountedRef.current) {
+        setSchool({ id: data.id, name: data.name, slug: data.slug, active: true });
+      }
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Error al cargar el negocio";
-      setError(message);
+      if (mountedRef.current) {
+        const message = err instanceof Error ? err.message : 'Error al cargar el negocio';
+        setError(message);
+      }
     } finally {
-      setLoading(false);
+      if (mountedRef.current) {
+        setLoading(false);
+      }
     }
   }, []);
 
   // Al montar, intenta cargar school desde localStorage
   useEffect(() => {
+    mountedRef.current = true;
     const storedSlug = localStorage.getItem(STORAGE_KEYS.POS_APP_SLUG);
     if (storedSlug) {
-      void fetchSchool(storedSlug);
+      // Use a microtask to avoid setState in effect
+      queueMicrotask(() => {
+        if (mountedRef.current) {
+          fetchSchool(storedSlug);
+        }
+      });
     } else {
-      setLoading(false);
+      // Use a microtask to avoid setState in effect
+      queueMicrotask(() => {
+        if (mountedRef.current) {
+          setLoading(false);
+        }
+      });
     }
+    return () => {
+      mountedRef.current = false;
+    };
   }, [fetchSchool]);
 
   const refetch = useCallback(async () => {
@@ -45,7 +66,7 @@ export function SchoolProvider({ children, fallbackName = DEFAULT_FALLBACK }: Sc
     if (slug) await fetchSchool(slug);
   }, [fetchSchool]);
 
-  // Acción desde login: cuando el cliente elige su escuela por slug, 
+  // Acción desde login: cuando el cliente elige su escuela por slug,
   // poblar el contexto directamente sin depender solo del storage
   const setSchoolFromLogin = useCallback((school: School) => {
     setSchool(school);
@@ -67,6 +88,6 @@ export function SchoolProvider({ children, fallbackName = DEFAULT_FALLBACK }: Sc
 
 export function useSchool() {
   const ctx = useContext(SchoolContext);
-  if (!ctx) throw new Error("useSchool debe usarse dentro de SchoolProvider");
+  if (!ctx) throw new Error('useSchool debe usarse dentro de SchoolProvider');
   return ctx;
 }

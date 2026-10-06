@@ -1,7 +1,7 @@
-import { useEffect, useRef } from "react";
-import { Modal } from "../Modal/Modal";
-import { useSchool } from "@/hooks/useSchool";
-import type { ReceiptModalProps } from "./types";
+import { useEffect, useRef, forwardRef } from 'react';
+import { Modal } from '../Modal/Modal';
+import { useSchool } from '@/hooks/useSchool';
+import type { ReceiptModalProps } from './types';
 
 const TICKET_CSS = `
   @page { margin: 0; size: 80mm auto; }
@@ -38,30 +38,217 @@ const TICKET_CSS = `
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
-  return date.toLocaleString("es-AR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
+  return date.toLocaleString('es-AR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 }
 
-function getTitle(type: "sale" | "quote" | "return"): string {
+function getTitle(type: 'sale' | 'quote' | 'return'): string {
   switch (type) {
-    case "sale":
-      return "COMPROBANTE DE VENTA";
-    case "quote":
-      return "PRESUPUESTO";
-    case "return":
-      return "NOTA DE CRÉDITO";
+    case 'sale':
+      return 'COMPROBANTE DE VENTA';
+    case 'quote':
+      return 'PRESUPUESTO';
+    case 'return':
+      return 'NOTA DE CRÉDITO';
   }
 }
 
-function getNumberDisplay(number: number, type: "sale" | "quote" | "return"): string {
-  const prefix = type === "return" ? "R" : "";
-  return `#${number.toString().padStart(4, "0")}${prefix}`;
+function getNumberDisplay(number: number, type: 'sale' | 'quote' | 'return'): string {
+  const prefix = type === 'return' ? 'R' : '';
+  return `#${number.toString().padStart(4, '0')}${prefix}`;
 }
+
+function TicketHeader({
+  receipt,
+  schoolName,
+}: {
+  receipt: ReceiptModalProps['receipt'];
+  schoolName: string;
+}) {
+  return (
+    <>
+      <div className="header center">
+        <h1 className="bold">{schoolName}</h1>
+        <p>{getTitle(receipt.type)}</p>
+        <p className="bold">{getNumberDisplay(receipt.number, receipt.type)}</p>
+      </div>
+      <div className="divider" />
+      <div className="info-row">
+        <span>Fecha</span>
+        <span>{formatDate(receipt.createdAt)}</span>
+      </div>
+      <div className="info-row">
+        <span>Vendedor</span>
+        <span>{receipt.seller.name}</span>
+      </div>
+      {receipt.client && (
+        <div className="info-row">
+          <span>Cliente</span>
+          <span>{receipt.client.fullName}</span>
+        </div>
+      )}
+      <div className="divider" />
+    </>
+  );
+}
+
+function TicketItems({ items }: { items: ReceiptModalProps['receipt']['items'] }) {
+  return (
+    <table className="items-table">
+      <thead>
+        <tr>
+          <th className="w-[55%]">Producto</th>
+          <th className="qty">Cant</th>
+          <th className="price">P.Unit</th>
+          <th className="subtotal">Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+        {items.map((item, index) => (
+          <tr key={index}>
+            <td>
+              <span className="item-name">{item.name}</span>
+              <span className="item-detail">
+                {item.type === 'product' ? 'PRODUCTO' : 'SERVICIO'}
+              </span>
+            </td>
+            <td className="qty">{item.quantity}</td>
+            <td className="price">${item.unitPrice.toLocaleString('es-AR')}</td>
+            <td className="subtotal">${item.subtotal.toLocaleString('es-AR')}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function TicketTotals({ receipt }: { receipt: ReceiptModalProps['receipt'] }) {
+  return (
+    <div className="totals">
+      <div className="row">
+        <span>Subtotal</span>
+        <span>${receipt.subtotal.toLocaleString('es-AR')}</span>
+      </div>
+      {receipt.discount > 0 && (
+        <div className="row" style={{ color: '#dc2626' }}>
+          <span>Descuento</span>
+          <span>−${receipt.discount.toLocaleString('es-AR')}</span>
+        </div>
+      )}
+      <div className="row total-row">
+        <span>TOTAL</span>
+        <span>${receipt.total.toLocaleString('es-AR')}</span>
+      </div>
+    </div>
+  );
+}
+
+function TicketPaymentInfo({ receipt }: { receipt: ReceiptModalProps['receipt'] }) {
+  if (!receipt.paymentMethod) return null;
+
+  return (
+    <div className="payment-info">
+      <PaymentMethodRow paymentMethod={receipt.paymentMethod} />
+      {receipt.paymentMethod === 'cash' && (receipt.amountReceived ?? 0) > 0 && (
+        <CashPaymentInfo amountReceived={receipt.amountReceived} change={receipt.change} />
+      )}
+      {receipt.paymentMethod === 'transfer' && (receipt.amountReceived ?? 0) > 0 && (
+        <TransferPaymentInfo amountReceived={receipt.amountReceived} />
+      )}
+      {receipt.paymentMethod === 'credit' && <CreditPaymentInfo total={receipt.total} />}
+    </div>
+  );
+}
+
+function PaymentMethodRow({ paymentMethod }: { paymentMethod: 'cash' | 'transfer' | 'credit' }) {
+  return (
+    <div className="row">
+      <span>Método</span>
+      <span>
+        {paymentMethod === 'cash' && 'Efectivo'}
+        {paymentMethod === 'transfer' && 'Transferencia'}
+        {paymentMethod === 'credit' && 'Crédito'}
+      </span>
+    </div>
+  );
+}
+
+function CashPaymentInfo({
+  amountReceived,
+  change,
+}: {
+  amountReceived: number | undefined;
+  change: number | undefined;
+}) {
+  const received = amountReceived ?? 0;
+  const changeValue = change ?? 0;
+  return (
+    <>
+      <div className="row">
+        <span>Recibido</span>
+        <span>${received.toLocaleString('es-AR')}</span>
+      </div>
+      {changeValue > 0 && (
+        <div className="row">
+          <span>Vuelto</span>
+          <span>${changeValue.toLocaleString('es-AR')}</span>
+        </div>
+      )}
+    </>
+  );
+}
+
+function TransferPaymentInfo({ amountReceived }: { amountReceived: number | undefined }) {
+  const received = amountReceived ?? 0;
+  return (
+    <div className="row">
+      <span>Recibido</span>
+      <span>${received.toLocaleString('es-AR')}</span>
+    </div>
+  );
+}
+
+function CreditPaymentInfo({ total }: { total: number }) {
+  return (
+    <div className="row">
+      <span>Queda a cuenta</span>
+      <span>${total.toLocaleString('es-AR')}</span>
+    </div>
+  );
+}
+
+function TicketFooter() {
+  return (
+    <div className="footer">
+      <p>¡Gracias por su compra!</p>
+    </div>
+  );
+}
+
+const TicketContent = forwardRef<
+  HTMLDivElement,
+  {
+    receipt: ReceiptModalProps['receipt'];
+    schoolName: string;
+  }
+>(({ receipt, schoolName }, ref) => {
+  return (
+    <div ref={ref} className="ticket max-w-md">
+      <TicketHeader receipt={receipt} schoolName={schoolName} />
+      <TicketItems items={receipt.items} />
+      <div className="divider" />
+      <TicketTotals receipt={receipt} />
+      <TicketPaymentInfo receipt={receipt} />
+      <div className="divider" />
+      <TicketFooter />
+    </div>
+  );
+});
 
 export function ReceiptModal({ isOpen, onClose, onConfirm, receipt }: ReceiptModalProps) {
   const ticketRef = useRef<HTMLDivElement>(null);
@@ -69,7 +256,7 @@ export function ReceiptModal({ isOpen, onClose, onConfirm, receipt }: ReceiptMod
 
   const handlePrint = () => {
     if (!ticketRef.current) return;
-    const printWindow = window.open("", "_blank");
+    const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
     const ticketHtml = ticketRef.current.outerHTML;
@@ -93,126 +280,23 @@ export function ReceiptModal({ isOpen, onClose, onConfirm, receipt }: ReceiptMod
     if (!isOpen) return;
 
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Enter") {
+      if (e.key === 'Enter') {
         e.preventDefault();
         onConfirm();
-      } else if (e.key === "Escape") {
+      } else if (e.key === 'Escape') {
         onClose();
       }
     }
 
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose, onConfirm]);
 
   if (!isOpen) return null;
 
   return (
     <Modal title="" isOpen={isOpen} onClose={onClose} size="lg">
-      <div ref={ticketRef} className="ticket max-w-md">
-        <div className="header center">
-          <h1 className="bold">{schoolName}</h1>
-          <p>{getTitle(receipt.type)}</p>
-          <p className="bold">{getNumberDisplay(receipt.number, receipt.type)}</p>
-        </div>
-        <div className="divider" />
-        <div className="info-row">
-          <span>Fecha</span>
-          <span>{formatDate(receipt.createdAt)}</span>
-        </div>
-        <div className="info-row">
-          <span>Vendedor</span>
-          <span>{receipt.seller.name}</span>
-        </div>
-        {receipt.client && (
-          <div className="info-row">
-            <span>Cliente</span>
-            <span>{receipt.client.fullName}</span>
-          </div>
-        )}
-        <div className="divider" />
-        <table className="items-table">
-          <thead>
-            <tr>
-              <th className="w-[55%]">Producto</th>
-              <th className="qty">Cant</th>
-              <th className="price">P.Unit</th>
-              <th className="subtotal">Subtotal</th>
-            </tr>
-          </thead>
-          <tbody>
-            {receipt.items.map((item, index) => (
-              <tr key={index}>
-                <td>
-                  <span className="item-name">{item.name}</span>
-                  <span className="item-detail">{item.type === "product" ? "PRODUCTO" : "SERVICIO"}</span>
-                </td>
-                <td className="qty">{item.quantity}</td>
-                <td className="price">${item.unitPrice.toLocaleString("es-AR")}</td>
-                <td className="subtotal">${item.subtotal.toLocaleString("es-AR")}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <div className="divider" />
-        <div className="totals">
-          <div className="row">
-            <span>Subtotal</span>
-            <span>${receipt.subtotal.toLocaleString("es-AR")}</span>
-          </div>
-          {receipt.discount > 0 && (
-            <div className="row" style={{ color: "#dc2626" }}>
-              <span>Descuento</span>
-              <span>−${receipt.discount.toLocaleString("es-AR")}</span>
-            </div>
-          )}
-          <div className="row total-row">
-            <span>TOTAL</span>
-            <span>${receipt.total.toLocaleString("es-AR")}</span>
-          </div>
-        </div>
-        {receipt.paymentMethod && (
-          <div className="payment-info">
-            <div className="row">
-              <span>Método</span>
-              <span>
-                {receipt.paymentMethod === "cash" && "Efectivo"}
-                {receipt.paymentMethod === "transfer" && "Transferencia"}
-                {receipt.paymentMethod === "credit" && "Crédito"}
-              </span>
-            </div>
-            {receipt.paymentMethod === "cash" && (receipt.amountReceived ?? 0) > 0 && (
-              <>
-                <div className="row">
-                  <span>Recibido</span>
-                  <span>${(receipt.amountReceived ?? 0).toLocaleString("es-AR")}</span>
-                </div>
-                {(receipt.change ?? 0) > 0 && (
-                  <div className="row">
-                    <span>Vuelto</span>
-                    <span>${(receipt.change ?? 0).toLocaleString("es-AR")}</span>
-                  </div>
-                )}
-              </>
-            )}
-            {receipt.paymentMethod === "transfer" && (receipt.amountReceived ?? 0) > 0 && (
-              <div className="row">
-                <span>Recibido</span>
-                <span>${(receipt.amountReceived ?? 0).toLocaleString("es-AR")}</span>
-              </div>
-            )}
-            {receipt.paymentMethod === "credit" && (
-              <div className="row">
-                <span>Queda a cuenta</span>
-                <span>${receipt.total.toLocaleString("es-AR")}</span>
-              </div>
-            )}
-          </div>
-        )}
-        <div className="footer">
-          <p>¡Gracias por su compra!</p>
-        </div>
-      </div>
+      <TicketContent ref={ticketRef} receipt={receipt} schoolName={schoolName} />
       <div className="mt-6 flex gap-3 no-print">
         <button
           onClick={handlePrint}

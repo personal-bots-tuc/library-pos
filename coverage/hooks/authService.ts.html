@@ -3,15 +3,15 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for pages/POS/hooks/useClient.ts</title>
+    <title>Code coverage report for hooks/authService.ts</title>
     <meta charset="utf-8" />
-    <link rel="stylesheet" href="../../../prettify.css" />
-    <link rel="stylesheet" href="../../../base.css" />
-    <link rel="shortcut icon" type="image/x-icon" href="../../../favicon.png" />
+    <link rel="stylesheet" href="../prettify.css" />
+    <link rel="stylesheet" href="../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style type='text/css'>
         .coverage-summary .sorter {
-            background-image: url(../../../sort-arrow-sprite.png);
+            background-image: url(../sort-arrow-sprite.png);
         }
     </style>
 </head>
@@ -19,34 +19,34 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../../../index.html">All files</a> / <a href="index.html">pages/POS/hooks</a> useClient.ts</h1>
+        <h1><a href="../index.html">All files</a> / <a href="index.html">hooks</a> authService.ts</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">92.85% </span>
+                <span class="strong">87.5% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>39/42</span>
+                <span class='fraction'>21/24</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">72.22% </span>
+                <span class="strong">75% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>13/18</span>
+                <span class='fraction'>6/8</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">70% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>4/4</span>
+                <span class='fraction'>7/10</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">92.1% </span>
+                <span class="strong">86.95% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>35/38</span>
+                <span class='fraction'>20/23</span>
             </div>
         
             
@@ -129,139 +129,142 @@
 <a name='L64'></a><a href='#L64'>64</a>
 <a name='L65'></a><a href='#L65'>65</a>
 <a name='L66'></a><a href='#L66'>66</a>
-<a name='L67'></a><a href='#L67'>67</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { useState, useCallback } from "react";
-import api from "../../../api/client";
-import type { UseClientResult } from "./types";
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span></td><td class="text"><pre class="prettyprint lang-js">import { loginWithPin, loginWithEmail } from "@/api/auth";
+import type { User } from "@/pages/POS/components/types";
 &nbsp;
-export function useClient(): UseClientResult {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState&lt;string | null&gt;(null);
+export const STORAGE_KEYS = {
+  ACCESS_TOKEN: "accessToken",
+  REFRESH_TOKEN: "refreshToken",
+  USER: "user",
+  POS_APP_SLUG: "posAppSlug",
+} as const;
 &nbsp;
-  const createClient = useCallback(async (data: { fullName: string; dni: string; phone?: string }) =&gt; {
-    setLoading(true);
-    setError(null);
-    try {
-      const { data: client } = await api.post("/clients", {
-        fullName: data.fullName.trim(),
-        dni: data.dni.trim(),
-        phone: data.phone?.trim() || undefined,
-      });
-      return client;
-    } catch (err: any) {
-      const message = err.response?.data?.message || <span class="branch-1 cbranch-no" title="branch not covered" >"Error al crear el cliente";</span>
-      setError(message);
-      throw new Error(message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+function getStoredAuth(): { user: User; token: string } | null {
+  const stored = localStorage.getItem(STORAGE_KEYS.USER);
+  const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+  if (stored &amp;&amp; token) return { user: JSON.parse(stored), token };
+  return null;
+}
 &nbsp;
-  const listClients = useCallback(async (params?: { search?: string; page?: number; limit?: number }) =&gt; {
-    setLoading(true);
-    setError(null);
-    try {
-      const queryParams = new URLSearchParams();
-      if (params?.search) queryParams.set("search", params.search);
-      if (params?.page) queryParams.set("page", params.page.toString());
-      if (params?.limit) queryParams.set("limit", params.limit.toString());
-      
-      const { data } = await api.get(`/clients?${queryParams.toString()}`);
-      return data;
-    } catch (err: any) {
-      const message = err.response?.data?.message || <span class="branch-1 cbranch-no" title="branch not covered" >"Error al cargar clientes";</span>
-      setError(message);
-      throw new Error(message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+function setStoredAuth(user: User, accessToken: string, refreshToken: string): void {
+  localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
+  localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+  localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+}
 &nbsp;
-  const searchClients = useCallback(async (query: string) =&gt; {
-    if (!query.trim()) return [];
-    setLoading(true);
-    setError(null);
-    try {
-      const { data } = await api.get("/clients", { 
-        params: { search: query, limit: 10, page: 1 } 
-      });
-      return data.items || <span class="branch-1 cbranch-no" title="branch not covered" >[];</span>
-    } catch (err: any) {
-      const message = <span class="cstat-no" title="statement not covered" >err.response?.data?.message || "Error al buscar clientes";</span>
-<span class="cstat-no" title="statement not covered" >      setError(message);</span>
-<span class="cstat-no" title="statement not covered" >      throw new Error(message);</span>
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+function <span class="fstat-no" title="function not covered" >setPosAppSlug(s</span>lug: string): void {
+<span class="cstat-no" title="statement not covered" >  localStorage.setItem(STORAGE_KEYS.POS_APP_SLUG, slug);</span>
+}
 &nbsp;
-  return { createClient, listClients, searchClients, loading, error };
-}</pre></td></tr></table></pre>
+function <span class="fstat-no" title="function not covered" >getPosAppSlug(): string | null {</span>
+<span class="cstat-no" title="statement not covered" >  return localStorage.getItem(STORAGE_KEYS.POS_APP_SLUG);</span>
+}
+&nbsp;
+function clearStoredAuth(): void {
+  localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+  localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+  localStorage.removeItem(STORAGE_KEYS.USER);
+}
+&nbsp;
+export interface AuthService {
+  getStoredUser: () =&gt; User | null;
+  getAccessToken: () =&gt; string | null;
+  setPosAppSlug: (slug: string) =&gt; void;
+  getPosAppSlug: () =&gt; string | null;
+  loginPin: (_pin: string, _schoolId: string) =&gt; Promise&lt;User&gt;;
+  loginEmail: (_email: string, _password: string) =&gt; Promise&lt;User&gt;;
+  logout: () =&gt; void;
+}
+&nbsp;
+export function createAuthService(): AuthService {
+  return {
+    getStoredUser: () =&gt; getStoredAuth()?.user ?? null,
+<span class="fstat-no" title="function not covered" >    getAccessToken: () =&gt; <span class="cstat-no" title="statement not covered" >g</span>etStoredAuth()?.token ?? null,</span>
+    setPosAppSlug,
+    getPosAppSlug,
+    loginPin: async (pin: string, schoolId: string) =&gt; {
+      const res = await loginWithPin(pin, schoolId);
+      setStoredAuth(res.user, res.accessToken, res.refreshToken);
+      return res.user;
+    },
+    loginEmail: async (email: string, password: string) =&gt; {
+      const res = await loginWithEmail(email, password);
+      setStoredAuth(res.user, res.accessToken, res.refreshToken);
+      return res.user;
+    },
+    logout: clearStoredAuth,
+  };
+}
+&nbsp;
+export const authService = createAuthService();</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
@@ -270,14 +273,14 @@ export function useClient(): UseClientResult {
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
                 at 2026-10-06T17:07:54.975Z
             </div>
-        <script src="../../../prettify.js"></script>
+        <script src="../prettify.js"></script>
         <script>
             window.onload = function () {
                 prettyPrint();
             };
         </script>
-        <script src="../../../sorter.js"></script>
-        <script src="../../../block-navigation.js"></script>
+        <script src="../sorter.js"></script>
+        <script src="../block-navigation.js"></script>
     </body>
 </html>
     
