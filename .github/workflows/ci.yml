@@ -36,9 +36,7 @@ jobs:
       - name: Install Railway CLI
         run: npm install -g @railway/cli
       - name: Deploy to Railway Production
-        run: |
-          railway login --token ${{ secrets.RAILWAY_TOKEN }}
-          railway service ${{ github.event.repository.name }} redeploy --yes
+        run: railway service ${{ github.event.repository.name }} redeploy --yes
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
@@ -52,8 +50,6 @@ jobs:
       - name: Install Railway CLI
         run: npm install -g @railway/cli
       - name: Deploy to Railway Staging
-        run: |
-          railway login --token ${{ secrets.RAILWAY_TOKEN }}
-          railway service ${{ github.event.repository.name }}-staging redeploy --yes
+        run: railway service ${{ github.event.repository.name }}-staging redeploy --yes
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
