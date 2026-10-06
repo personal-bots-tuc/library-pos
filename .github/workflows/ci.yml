@@ -75,11 +75,11 @@ jobs:
     environment: staging
     steps:
       - name: Deploy to Railway Staging
-        uses: railwayapp/railway-deploy@v1
-        with:
-          token: ${{ secrets.RAILWAY_TOKEN }}
-          service: ${{ github.event.repository.name }}-staging
-          environment: staging
+        run: |
+          railway login --token ${{ secrets.RAILWAY_TOKEN }}
+          railway service ${{ github.event.repository.name }}-staging deploy
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
   deploy-production:
     needs: build
@@ -88,11 +88,11 @@ jobs:
     environment: production
     steps:
       - name: Deploy to Railway Production
-        uses: railwayapp/railway-deploy@v1
-        with:
-          token: ${{ secrets.RAILWAY_TOKEN }}
-          service: ${{ github.event.repository.name }}
-          environment: production
+        run: |
+          railway login --token ${{ secrets.RAILWAY_TOKEN }}
+          railway service ${{ github.event.repository.name }} deploy
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
   rollback:
     needs: build
@@ -102,6 +102,7 @@ jobs:
     steps:
       - name: Rollback Railway
         run: |
+          railway login --token ${{ secrets.RAILWAY_TOKEN }}
           SERVICE_NAME="${{ github.event.inputs.environment == 'production' && github.event.repository.name || github.event.repository.name + '-staging' }}"
           railway service "$SERVICE_NAME" rollback
         env:
