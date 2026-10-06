@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: CI Pipeline
 
 on:
   push:
@@ -11,19 +11,9 @@ on:
       - main
       - master
       - develop
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Environment to deploy'
-        required: true
-        type: choice
-        options: [staging, production]
-
-env:
-  REGISTRY: ghcr.io
 
 jobs:
-  lint-test-typecheck:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,27 +26,13 @@ jobs:
       - run: npm run typecheck
       - run: npm run test:run -- --coverage
 
-  deploy-staging:
-    needs: lint-test-typecheck
-    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    environment: staging
-    steps:
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
-      - name: Deploy to Railway Staging
-        run: |
-          railway login --token ${{ secrets.RAILWAY_TOKEN }}
-          railway service ${{ github.event.repository.name }}-staging redeploy --yes
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-
   deploy-production:
-    needs: lint-test-typecheck
-    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') && github.event_name == 'push'
+    needs: test
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     environment: production
     steps:
+      - uses: actions/checkout@v4
       - name: Install Railway CLI
         run: npm install -g @railway/cli
       - name: Deploy to Railway Production
@@ -66,18 +42,18 @@ jobs:
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
-  rollback:
-    needs: lint-test-typecheck
-    if: github.event_name == 'workflow_dispatch'
+  deploy-staging:
+    needs: test
+    if: github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment }}
+    environment: staging
     steps:
+      - uses: actions/checkout@v4
       - name: Install Railway CLI
         run: npm install -g @railway/cli
-      - name: Rollback Railway
+      - name: Deploy to Railway Staging
         run: |
           railway login --token ${{ secrets.RAILWAY_TOKEN }}
-          SERVICE_NAME="${{ github.event.inputs.environment == 'production' && github.event.repository.name || github.event.repository.name + '-staging' }}"
-          railway service "$SERVICE_NAME" rollback
+          railway service ${{ github.event.repository.name }}-staging redeploy --yes
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
