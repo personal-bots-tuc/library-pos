@@ -38,7 +38,8 @@ COPY public/health.json ./health.json
 # Crear directorio /run/nginx con permisos correctos para el usuario nginx
 RUN mkdir -p /run/nginx && chown -R nginx:nginx /run/nginx && \
     chown -R nginx:nginx /usr/share/nginx/html /var/cache/nginx /var/log/nginx /etc/nginx/conf.d && \
-    chmod +x /entrypoint.sh
+    chmod +x /entrypoint.sh && \
+    sed -i -e '/user /d' -e 's|pid .*|pid /run/nginx/nginx.pid;|' /etc/nginx/nginx.conf
 
 USER nginx
 
