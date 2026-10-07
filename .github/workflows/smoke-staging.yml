@@ -1,0 +1,52 @@
+name: Smoke Tests Staging
+
+# Se ejecuta cuando "CI Pipeline" termina en develop o manualmente.
+# NOTA: el deploy real a staging lo hace Railway auto-deploy (rama develop).
+on:
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    types: [completed]
+    branches: [develop]
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    name: Smoke test POS staging
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Wait for staging to be reachable
+        run: |
+          URL="${{ vars.STAGING_URL }}"
+          echo "Polling $URL ..."
+          for i in $(seq 1 40); do
+            if curl -sf "$URL/" > /dev/null 2>&1; then
+              echo "Staging reachable after $((i * 15))s"
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "ERROR: staging not reachable after 10 minutes"
+          exit 1
+
+      - name: Health endpoint returns ok
+        run: |
+          BODY=$(curl -sf "${{ vars.STAGING_URL }}/health")
+          echo "$BODY"
+          echo "$BODY" | grep -q '"status":"ok"' || echo "$BODY" | grep -q '"status": "ok"'
+
+      - name: Runtime config points to staging API
+        run: |
+          BODY=$(curl -sf "${{ vars.STAGING_URL }}/config.js")
+          echo "$BODY"
+          echo "$BODY" | grep -qi 'staging'
+
+      - name: SPA fallback returns 200 on unknown route
+        run: |
+          CODE=$(curl -s -o /dev/null -w "%{http_code}" "${{ vars.STAGING_URL }}/smoke-nonexistent-route")
+          echo "HTTP $CODE"
+          [ "$CODE" = "200" ]
+
+      - name: Summary
+        run: echo "Smoke tests PASSED for ${{ vars.STAGING_URL }}"
