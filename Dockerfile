@@ -36,7 +36,9 @@ COPY public/config.template.js ./config.template.js
 COPY public/health.json ./health.json
 
 # Non-root user (nginx user already exists in nginx:alpine base image)
-RUN chown -R nginx:nginx /usr/share/nginx/html /var/cache/nginx /var/log/nginx /etc/nginx/conf.d && \
+# Crear directorio /run/nginx con permisos correctos para el usuario nginx
+RUN mkdir -p /run/nginx && chown -R nginx:nginx /run/nginx && \
+    chown -R nginx:nginx /usr/share/nginx/html /var/cache/nginx /var/log/nginx /etc/nginx/conf.d && \
     chmod +x /entrypoint.sh
 
 USER nginx
