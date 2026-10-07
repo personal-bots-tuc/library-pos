@@ -44,6 +44,6 @@ USER nginx
 EXPOSE 5173
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:5173/health || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT}/health || exit 1
 
 ENTRYPOINT ["/entrypoint.sh"]
