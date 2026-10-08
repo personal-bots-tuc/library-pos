@@ -1,12 +1,13 @@
-import axios from "axios";
+import axios from 'axios';
+import { getApiBaseUrl } from '../lib/runtime-config';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "/api",
-  headers: { "Content-Type": "application/json" },
+  baseURL: getApiBaseUrl(),
+  headers: { 'Content-Type': 'application/json' },
 });
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("accessToken");
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem('accessToken');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -14,13 +15,13 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use(
-  (response) => response,
-  (error) => {
+  response => response,
+  error => {
     if (error.response?.status === 401) {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("user");
-      window.location.href = "/login";
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }
