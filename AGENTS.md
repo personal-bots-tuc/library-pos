@@ -2,8 +2,8 @@
 type: Repository
 app: librarysystem-pos
 archetype: frontend
-version: <sha-corto>
-validated: 2026-10-05
+version: 3bec361
+validated: 2026-10-08
 update_when: when repo identity, reading order, or maintenance rules change
 ---
 
@@ -21,7 +21,10 @@ Read these guides in order:
 3. [contracts.md](docs/agent/contracts.md) — exposed and consumed interfaces.
 4. [runbook.md](docs/agent/runbook.md) — commands and Definition of Done.
 5. [traps.md](docs/agent/traps.md) — non-obvious behavior.
+6. [DEPLOYMENT_PIPELINE.md](docs/DEPLOYMENT_PIPELINE.md) — flujo develop→staging→prod de este repo + protocolo IA.
+7. [STAGING_VALIDATION_CHECKLIST.md](docs/STAGING_VALIDATION_CHECKLIST.md) — gate manual obligatorio antes de promover a producción.
 
 ## Maintenance rule
 When code changes, update the relevant guide in the same PR. Record new,
 non-obvious gotchas in traps.md. Review consumers before breaking a contract.
+Add a CHANGELOG.md entry ([Unreleased]) with ticket + PR links in the same PR.
