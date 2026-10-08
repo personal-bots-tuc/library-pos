@@ -1,13 +1,16 @@
 ---
 type: Runbook
-version: <sha-corto>
-validated: 2026-10-05
+version: 3bec361
+validated: 2026-10-08
 update_when: when commands, validation steps, or Definition of Done change
 scope:
   - package.json
   - vite.config.ts
   - Dockerfile
+  - nginx-main.conf
   - .github/workflows/ci.yml
+  - .github/workflows/smoke-staging.yml
+  - .github/pull_request_template.md
   - nginx.conf.template
   - entrypoint.sh
 ---
@@ -88,12 +91,27 @@ railway up
 # Ver logs
 railway logs
 
-# Rollback
-railway rollback
+# Rollback REAL: NO existe `railway rollback` en CLI v4.
+# Redeploy del último deployment (restart/recovery):
+railway redeploy -s library-pos -e production -y
+# Rollback a versión anterior: Railway Dashboard → library-pos → Deployments → "Redeploy" en el deployment previo.
 
 # Variables
 railway variables set VITE_API_BASE_URL=https://api.tudominio.com
 ```
+
+## Pipeline de despliegue
+
+> Fuente de verdad del mecanismo de este repo: [../DEPLOYMENT_PIPELINE.md](../DEPLOYMENT_PIPELINE.md)
+
+Flujo obligatorio:
+1. Rama `feature/[POS-XXX]-desc` desde `develop` → PR a `develop` → CI verde → merge.
+2. Merge a `develop` → deploy a staging → workflow **Smoke Tests Staging** corre automáticamente.
+3. Smoke VERDE + [../STAGING_VALIDATION_CHECKLIST.md](../STAGING_VALIDATION_CHECKLIST.md) ejecutado, APROBADO y firmado.
+4. PR `develop` → `main` (template con sección RELEASE completa) → 1 aprobación → merge → producción.
+5. Post-prod: smoke manual en producción + logs 10 min.
+
+**Prohibido:** push directo a `develop`/`main`; promover sin checklist firmado; mergear con CI roja.
 
 ## Definition of Done (Checklist Obligatorio por PR)
 
@@ -123,6 +141,11 @@ railway variables set VITE_API_BASE_URL=https://api.tudominio.com
 - [ ] Healthcheck passing en Railway logs
 - [ ] Preview deployment (`*.railway.app`) accesible y funcional
 
+### Pipeline (obligatorio para promover a producción)
+- [ ] Workflow **Smoke Tests Staging** verde en `develop`
+- [ ] `docs/STAGING_VALIDATION_CHECKLIST.md` ejecutado, APROBADO y firmado
+- [ ] PR `develop`→`main` con sección RELEASE completa y 1 aprobación
+
 ### Documentation
 - [ ] Guías afectadas actualizadas en mismo PR (`docs/agent/`)
 - [ ] `version` y `validated` actualizados en frontmatter
@@ -132,14 +155,13 @@ railway variables set VITE_API_BASE_URL=https://api.tudominio.com
 
 ## Rollback Procedure
 ```bash
-# Opción 1: GitHub Actions (recomendado)
-gh workflow run ci.yml -f environment=production -f rollback=true
+# ÚNICO camino de rollback real en este repo:
+# Railway Dashboard → service library-pos → environment → Deployments → "Redeploy" en el deployment previo sano.
 
-# Opción 2: Railway CLI
-railway service librarysystem-pos rollback
-
-# Opción 3: Railway Dashboard → Deployments → "Rollback to this deployment"
+# Redeploy del último deployment (NO es rollback; sirve para restart/recovery):
+railway redeploy -s library-pos -e production -y
 ```
+> NOTA: `gh workflow run ci.yml -f rollback=true` existe SOLO en el repo API (arieltecay/api-library-system), no aquí.
 
 ## Troubleshooting
 
