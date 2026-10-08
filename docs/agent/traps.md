@@ -1,7 +1,7 @@
 ---
 type: Traps
-version: <sha-corto>
-validated: 2026-10-05
+version: daee6d3
+validated: 2026-10-08
 update_when: when new non-obvious behavior is confirmed
 ---
 
@@ -12,6 +12,7 @@ update_when: when new non-obvious behavior is confirmed
 **Solución**: Usamos `config.template.js` + `entrypoint.sh` + `envsubst` para generar `config.js` en runtime.
 **Evidencia**: `index.html` carga `<script src="/config.js">` ANTES de `<script type="module" src="/src/main.tsx">`.
 **App accede**: `window.__ENV__.VITE_API_BASE_URL` (NO `import.meta.env.VITE_API_BASE_URL` en producción).
+**Regresión 2026-10-08 (fix [POS-104])**: `src/api/client.ts` usaba `import.meta.env.VITE_API_BASE_URL` directo → bundle sin URL del API → axios pegaba same-origin `/api/*` → nginx respondía 405 → login PIN fallaba en silencio (sin red ni error útil). Se portó `src/lib/runtime-config.ts` (mismo patrón que admin). Regla: NUNCA leer `import.meta.env.VITE_*` fuera de `src/lib/runtime-config.ts`.
 
 ## Docker Multi-stage
 **Problema**: `npm ci` en builder instala devDependencies, pero runtime usa nginx (no node).
