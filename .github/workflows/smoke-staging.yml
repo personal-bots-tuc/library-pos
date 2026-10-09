@@ -1,52 +1,62 @@
 name: Smoke Tests Staging
 
-# Se ejecuta cuando "CI Pipeline" termina en develop o manualmente.
-# NOTA: el deploy real a staging lo hace Railway auto-deploy (rama develop).
 on:
   workflow_run:
     workflows: ["CI Pipeline"]
-    types: [completed]
-    branches: [develop]
+    types:
+      - completed
+    branches:
+      - develop
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   smoke:
-    name: Smoke test POS staging
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    name: Smoke Tests
     runs-on: ubuntu-latest
-    environment: staging
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    env:
+      STAGING_URL: https://library-pos-staging.up.railway.app
     steps:
-      - name: Wait for staging to be reachable
+      - name: Wait for deployment to be ready
         run: |
-          URL="${{ vars.STAGING_URL }}"
-          echo "Polling $URL ..."
-          for i in $(seq 1 40); do
-            if curl -sf "$URL/" > /dev/null 2>&1; then
-              echo "Staging reachable after $((i * 15))s"
-              exit 0
-            fi
-            sleep 15
-          done
-          echo "ERROR: staging not reachable after 10 minutes"
-          exit 1
+          echo "Waiting 30s for Railway deployment to stabilize..."
+          sleep 30
 
-      - name: Health endpoint returns ok
+      - name: Check reachable
         run: |
-          BODY=$(curl -sf "${{ vars.STAGING_URL }}/health")
-          echo "$BODY"
-          echo "$BODY" | grep -q '"status":"ok"' || echo "$BODY" | grep -q '"status": "ok"'
+          echo "Checking reachable: $STAGING_URL"
+          curl -sf "$STAGING_URL" > /dev/null
+          echo "✅ Reachable"
 
-      - name: Runtime config points to staging API
+      - name: Check health endpoint
         run: |
-          BODY=$(curl -sf "${{ vars.STAGING_URL }}/config.js")
-          echo "$BODY"
-          echo "$BODY" | grep -qi 'staging'
+          echo "Checking health: $STAGING_URL/health"
+          response=$(curl -sf "$STAGING_URL/health")
+          echo "$response" | grep -q '"status":"ok"'
+          echo "✅ Health OK: $response"
 
-      - name: SPA fallback returns 200 on unknown route
+      - name: Check config.js contains staging
         run: |
-          CODE=$(curl -s -o /dev/null -w "%{http_code}" "${{ vars.STAGING_URL }}/smoke-nonexistent-route")
-          echo "HTTP $CODE"
-          [ "$CODE" = "200" ]
+          echo "Checking config.js: $STAGING_URL/config.js"
+          config=$(curl -sf "$STAGING_URL/config.js")
+          echo "$config" | grep -q "staging"
+          echo "✅ Config contains staging"
+
+      - name: Check SPA fallback
+        run: |
+          echo "Checking SPA fallback: $STAGING_URL/smoke-test-route"
+          code=$(curl -s -o /dev/null -w "%{http_code}" "$STAGING_URL/smoke-test-route")
+          if [ "$code" = "200" ]; then
+            echo "✅ SPA fallback OK (200)"
+          else
+            echo "❌ SPA fallback failed (code: $code)"
+            exit 1
+          fi
 
       - name: Summary
-        run: echo "Smoke tests PASSED for ${{ vars.STAGING_URL }}"
+        if: always()
+        run: |
+          echo "Smoke tests completed for $STAGING_URL"
