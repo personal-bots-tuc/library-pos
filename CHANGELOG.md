@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+
+- **Crash IndexedDB tras login (POS-108 hotfix)** — los object stores de IndexedDB
+  solo se crean en la primera apertura de la DB: un store por namespace (`rq-anon`
+  en login) explotaba con `NotFoundError` para cualquier namespace posterior, y
+  `persistClient` lanzaba rejection sin capturar en cada mutation. Fix: un solo
+  store fijo + namespace como prefijo de key + DB `-v2` con limpieza legacy.
+  Test de regresión multi-namespace incluido.
 - **POS bloqueado en "Guardando…" al cobrar (POS-108)** — Tres causas combinadas:
   (1) los toasts existían en estado pero NUNCA se renderizaban en el DOM del POS
   (viewport ausente) → cualquier error de venta era invisible;
