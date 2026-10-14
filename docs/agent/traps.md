@@ -69,3 +69,13 @@ update_when: when new non-obvious behavior is confirmed
 5. **Service Worker**: `public/sw.js` (hand-rolled) hace PASSTHROUGH de `/config.js` (inyección runtime), `/health` y `/api/*`. Guardado por guardrails. Update de versión SOLO con confirmación del usuario (puede estar cobrando).
 6. **Sin health-pings de conectividad** — detección pasiva vía eventos (`ConnectivityBadge`); un ping rompería App Sleep.
 7. `useSyncGate` comparte UN solo set de listeners + timer para toda la app (store singleton con useSyncExternalStore).
+
+## Los toasts deben RENDERIZARSE (POS-108, 2026-10-14)
+**Problema**: `ToastProvider` acumulaba `toasts` en estado pero ningún componente
+los dibujaba en el POS → todo error de venta era invisible (el cajero solo veía
+"Guardando…"). La verificación debe hacerse sobre UI real, no sobre el contexto.
+**Regla**: si existe un canal de feedback, hay un test que prueba que el mensaje
+llega al DOM (`useToast.viewport.test.tsx`). Además: las mutations NUNCA se
+persisten (`shouldDehydrateMutation: () => false`) — restaurar una mutation
+pausada la revivía tras cada recarga; y el cobro tiene watchdog 30s con
+reconciliación (`resolveAfterWatchdog`) ante API dormida/caída.
