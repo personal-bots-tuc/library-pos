@@ -90,3 +90,16 @@ persistClient en cada mutation.
 de la key (`pos-query:<schoolId>:<userId>`). Para cambiar la forma de la DB:
 renombrarla (`*-v2`) y borrar la legacy en best-effort — nunca upgrades manuales.
 **Evidencia**: `src/lib/persistence.ts` + test de regresión multi-namespace.
+
+## SVG paths copiados a mano se corruptúan (POS-110, 2026-10-14)
+**Problema**: el icono `building-library` del header POS (`POSHeader.tsx`) tenía un
+`d` corrupto: le faltaba el segmento `c1.747 0 3.332.477 4.5 1.253v13C19.832...`
+(un copy/paste truncado). React DOM loguea `Error: <path> attribute d: Expected
+number` en consola aunque el icono se vea "bien" a simple vista — el navegador solo
+descarta el segmento inválido y sigue.
+**Regla**: ante error `attribute d: Expected number`, comparar SIEMPRE contra la
+fuente canónica del icono (Heroicons) o contra otra ocurrencia del mismo icono en el
+propio repo (el mismo path estaba correcto en `LoginPage.tsx`). No "reparar" cifras
+a ojo.
+**Evidencia**: `src/pages/POS/components/POSHeader/POSHeader.tsx` ahora comparte el
+path exacto de `src/pages/LoginPage.tsx:253`.
