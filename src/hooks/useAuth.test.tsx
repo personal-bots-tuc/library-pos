@@ -124,13 +124,14 @@ describe('useAuth', () => {
 
     expect(result.current.isAuthenticated).toBe(true);
 
-    act(() => {
+    await act(async () => {
       result.current.logout();
     });
 
+    // logout purga el cache persistido (async) antes de limpiar el storage
+    await waitFor(() => expect(localStorage.getItem('accessToken')).toBeNull());
     expect(result.current.user).toBeNull();
     expect(result.current.isAuthenticated).toBe(false);
-    expect(localStorage.getItem('accessToken')).toBeNull();
     expect(localStorage.getItem('refreshToken')).toBeNull();
     expect(localStorage.getItem('user')).toBeNull();
     expect(localStorage.getItem('posAppSlug')).toBe('menta-dev');
