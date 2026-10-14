@@ -32,7 +32,13 @@ export function QueryProvider({ children }: PropsWithChildren) {
       persistOptions={{
         persister: query.persister,
         maxAge: PERSIST_MAX_AGE,
-        dehydrateOptions: { shouldDehydrateQuery: shouldPersistQuery },
+        dehydrateOptions: {
+          shouldDehydrateQuery: shouldPersistQuery,
+          // NUNCA persistir mutations: una mutation pausada restaurada tras
+          // recargar se reintenta y se vuelve a persistir → venta "colgada"
+          // eterna. Las escrituras son transitorias por diseño.
+          shouldDehydrateMutation: () => false,
+        },
       }}
       onSuccess={() => {
         // Cache hidratado: reanudar mutations pausadas por falta de red.

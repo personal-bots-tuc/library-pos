@@ -7,6 +7,7 @@ import type {
 } from '../components/types';
 import type { CashMovementAggregated } from '../components/CashMovementModal/types';
 import type { CartItem } from '../components/Cart/types';
+import type { SaleAttempt } from './saleIntegrity';
 
 export type OperationMode = 'sale' | 'quote' | 'return';
 
@@ -105,6 +106,8 @@ export interface UseSaleResult {
     paymentMethod: 'cash' | 'transfer' | 'credit';
     amountReceived: number;
     expectedTotal?: number;
+    /** Attempt estable por operación (misma idempotencyKey en reintentos). */
+    attempt?: SaleAttempt;
   }) => Promise<{ total: number; change: number; sale: SaleLean }>;
   previewSale: (params: {
     items: { product: string; quantity: number }[];

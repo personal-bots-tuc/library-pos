@@ -1,7 +1,12 @@
 import { useMutation } from '@tanstack/react-query';
 import api from '../../../api/client';
 import type { UseSaleResult, SaleLean, PreviewSaleResult } from './types';
-import { findMatchingSale, isDefiniteServerError, newSaleAttempt } from './saleIntegrity';
+import {
+  findMatchingSale,
+  isDefiniteServerError,
+  newSaleAttempt,
+  type SaleAttempt,
+} from './saleIntegrity';
 
 interface CheckoutParams {
   items: { product: string; quantity: number }[];
@@ -11,6 +16,8 @@ interface CheckoutParams {
   amountReceived: number;
   /** Total esperado calculado en cliente; solo se usa para reconciliación. */
   expectedTotal?: number;
+  /** Attempt compartido con el flujo (watchdog/reconciliación reutilizan key). */
+  attempt?: SaleAttempt;
 }
 
 interface PreviewParams {
@@ -62,7 +69,9 @@ function buildPayload(params: CheckoutParams, idempotencyKey: string) {
 export function useSale(): UseSaleResult {
   const checkoutMutation = useMutation({
     mutationFn: async (params: CheckoutParams) => {
-      const attempt = newSaleAttempt(params.items, params.expectedTotal ?? params.amountReceived);
+      const attempt =
+        params.attempt ??
+        newSaleAttempt(params.items, params.expectedTotal ?? params.amountReceived);
       const payload = buildPayload(params, attempt.idempotencyKey);
 
       try {

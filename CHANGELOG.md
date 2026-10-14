@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **POS bloqueado en "Guardando…" al cobrar (POS-108)** — Tres causas combinadas:
+  (1) los toasts existían en estado pero NUNCA se renderizaban en el DOM del POS
+  (viewport ausente) → cualquier error de venta era invisible;
+  (2) las mutations pausadas se persistían en IndexedDB y reaparecían tras cada
+  recarga → bloqueo permanente (ahora `shouldDehydrateMutation: () => false`);
+  (3) sin watchdog: una API dormida/caída dejaba el flujo en espera infinita.
+  Ahora: watchdog de 30s con reconciliación (`useSaleFlow`), toasts visibles,
+  badge ámbar distingue "se enviará al reconectar", con test dedicado.
+
 ### Added
 - **Optimización de costos Railway (App Sleep) + offline-first de lectura (POS-108)** —
   (1) Capa de datos migrada a React Query con persistencia en IndexedDB namespaced por

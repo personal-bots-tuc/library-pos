@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useIsFetching, useIsMutating } from '@tanstack/react-query';
+import { useIsMutating, useMutationState } from '@tanstack/react-query';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 
 /**
@@ -18,7 +18,11 @@ import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 export function ConnectivityBadge() {
   const online = useOnlineStatus();
   const pendingMutations = useIsMutating();
-  const fetching = useIsFetching();
+  // Mutation pausada = la request falló por red y React Query la reintentará
+  // sola al reconectar. Hay que decirlo claramente: NO es que "no pasa nada".
+  const pausedMutations = useMutationState({
+    select: mutation => mutation.state.isPaused,
+  }).filter(Boolean).length;
   const [justRecovered, setJustRecovered] = useState(false);
   const wasOfflineRef = useRef(!online);
 
@@ -61,15 +65,15 @@ export function ConnectivityBadge() {
     return (
       <output
         aria-live="polite"
-        className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-full bg-sky-600 px-3 py-1.5 text-xs font-medium text-white shadow-lg"
+        className={`fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium text-white shadow-lg ${
+          pausedMutations > 0 ? 'bg-amber-500' : 'bg-sky-600'
+        }`}
       >
         <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-white" />
-        Guardando…
+        {pausedMutations > 0 ? 'Guardando — se enviará solo al recuperar conexión' : 'Guardando…'}
       </output>
     );
   }
 
-  // fetching>0 sin mutations es sync de lectura de bajo costo: no molestamos al usuario.
-  void fetching;
   return null;
 }
