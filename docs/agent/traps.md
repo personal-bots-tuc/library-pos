@@ -53,8 +53,19 @@ update_when: when new non-obvious behavior is confirmed
 **Problema**: StrictMode monta/desmonta doble en dev → efectos secundarios dobles.
 **Solución**: Cleanup functions en useEffect + `AbortController` en fetches.
 **Evidencia**: `useProducts.ts`, `useSale.ts` usan AbortController.
+**Supersedido 2026-10-13 (POS-108)**: la cancelación la maneja React Query por observer/signal; ver "Polling, cache local y costos Railway".
 
 ## Husky + Commit Message
 **Problema**: Commits sin ticket no trazables.
 **Solución**: `.husky/commit-msg` valida formato `[TICKET-123]-descripcion`.
 **Excepción**: Merge commits y reverts permitidos (validar en regex).
+## Polling, cache local y costos Railway (POS-108, 2026-10-13)
+**Problema**: `useShift` polleaba `/cash-shifts/active` cada 10s incondicional (~259k req/mes por tab, impidiendo App Sleep) y el buscador disparaba 1 request por tecla.
+**Reglas vigentes**:
+1. **PROHIBIDO `setInterval` para refetch fuera de `src/hooks/useSyncGate.ts`** — CI falla (`npm run guardrails`). Sync periódico = compuerta (visible + actividad <10min) + `refetchInterval` de React Query.
+2. **Capa de datos = React Query + persistencia IndexedDB** (`src/lib/queryClient.ts`, `src/lib/persistence.ts`). Solo queries root `products`/`clients` se persisten; turno/ventas/movimientos JAMÁS (whitelist `shouldPersistQuery`).
+3. **Escrituras SIEMPRE online** (mutations, `retry: 0` por defecto del client). Offline quedan pausadas (`networkMode:'online'`) y se disparan solas al reconectar — el cajero no hace nada, el carrito no se pierde. NO imprimir ni confirmar comprobante hasta respuesta del servidor.
+4. **Anti-duplicados de ventas** (`src/pages/POS/hooks/saleIntegrity.ts`): `idempotencyKey` (UUID por intento) viaja en el body — el back lo descarta hoy (Zod sin `.strict()`) y la dedup se activa sola cuando el team back lo soporte. Resultado incierto (respuesta perdida): NUNCA retry ciego → reconciliar con `GET /sales?sellerId=…&fromDate=…` antes de reenviar la misma key.
+5. **Service Worker**: `public/sw.js` (hand-rolled) hace PASSTHROUGH de `/config.js` (inyección runtime), `/health` y `/api/*`. Guardado por guardrails. Update de versión SOLO con confirmación del usuario (puede estar cobrando).
+6. **Sin health-pings de conectividad** — detección pasiva vía eventos (`ConnectivityBadge`); un ping rompería App Sleep.
+7. `useSyncGate` comparte UN solo set de listeners + timer para toda la app (store singleton con useSyncExternalStore).

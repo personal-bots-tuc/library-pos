@@ -8,6 +8,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Optimización de costos Railway (App Sleep) + offline-first de lectura (POS-108)** —
+  (1) Capa de datos migrada a React Query con persistencia en IndexedDB namespaced por
+  `schoolId:userId` (`src/lib/persistence.ts`, `src/providers/QueryProvider.tsx`): el catálogo
+  sobrevive al sleep del backend y abre instantáneo, purgándose en logout.
+  (2) `useSyncGate` (`src/hooks/useSyncGate.ts`): única compuerta permitida para sync
+  automático (pestaña visible + actividad <10min). El turno activo pollea cada 60s solo
+  con turno abierto y compuertas abiertas (antes: 10s incondicional ≈259k req/mes/tab);
+  el catálogo sincroniza cada 10min (antes: 1 request por tecla de búsqueda — ahora filtro
+  client-side).
+  (3) Anti-duplicados de ventas (`src/pages/POS/hooks/saleIntegrity.ts`): lock sincrónico
+  + `idempotencyKey` por intento (viaja al back; se activa cuando el team back lo soporte)
+  + reconciliación contra `GET /sales` ante resultado incierto en vez de retry ciego.
+  (4) PWA: `public/sw.js` hand-rolled (navegaciones network-first, assets cache-first,
+  `/config.js`/`/health`/`/api/*` siempre red), manifest y banner de actualización con
+  confirmación del usuario (nunca recarga a mitad de venta).
+  (5) `ConnectivityBadge` informativo sin acciones (detección pasiva, sin health-pings).
+  (6) Guardrail de CI `npm run guardrails` (`ci/guardrails.mjs`): falla si aparece
+  `setInterval` fuera de `useSyncGate` o si `sw.js` pierde los passthroughs.
+
+### Added
 - Pipeline staging→production: workflow `smoke-staging.yml` (smoke tests automáticos post-deploy en staging), checklist de validación manual obligatorio (`docs/STAGING_VALIDATION_CHECKLIST.md`), PR template con sección RELEASE, branch protection (`develop`/`main`) y GitHub Environments (`staging`/`production`). [[POS-100](https://github.com/personal-bots-tuc/library-pos/pull/2)], [[#3](https://github.com/personal-bots-tuc/library-pos/pull/3)]
 - `docs/DEPLOYMENT_PIPELINE.md` — fuente de verdad del mecanismo de deploy de este repo. [POS-102](https://github.com/personal-bots-tuc/library-pos/pull/5), [[POS-103](https://github.com/personal-bots-tuc/library-pos/pull/8)]
 - `src/lib/runtime-config.ts` — lectura de config runtime via `window.__ENV__`. [POS-104](https://github.com/personal-bots-tuc/library-pos/pull/11)

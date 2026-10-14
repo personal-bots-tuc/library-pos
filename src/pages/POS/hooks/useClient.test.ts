@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useClient } from './useClient';
+import { getHookWrapper } from '../../../test/utils';
 import api from '../../../api/client';
 import type { Client, ClientListResponse } from '../components/types';
 
@@ -32,7 +33,7 @@ describe('useClient', () => {
   it('should create client successfully', async () => {
     vi.mocked(api.post).mockResolvedValue({ data: mockClient });
 
-    const { result } = renderHook(() => useClient());
+    const { result } = renderHook(() => useClient(), { wrapper: getHookWrapper() });
 
     let createdClient: typeof mockClient | null = null;
 
@@ -57,7 +58,7 @@ describe('useClient', () => {
   it('should trim whitespace from input', async () => {
     vi.mocked(api.post).mockResolvedValue({ data: mockClient });
 
-    const { result } = renderHook(() => useClient());
+    const { result } = renderHook(() => useClient(), { wrapper: getHookWrapper() });
 
     await act(async () => {
       await result.current.createClient({
@@ -79,7 +80,7 @@ describe('useClient', () => {
       response: { data: { message: 'DNI ya existe' } },
     });
 
-    const { result } = renderHook(() => useClient());
+    const { result } = renderHook(() => useClient(), { wrapper: getHookWrapper() });
 
     await expect(
       act(async () => {
@@ -94,7 +95,7 @@ describe('useClient', () => {
   it('should list clients with pagination', async () => {
     vi.mocked(api.get).mockResolvedValue({ data: mockClientList });
 
-    const { result } = renderHook(() => useClient());
+    const { result } = renderHook(() => useClient(), { wrapper: getHookWrapper() });
 
     let clientList: typeof mockClientList | null = null;
 
@@ -109,9 +110,9 @@ describe('useClient', () => {
   it('should search clients', async () => {
     vi.mocked(api.get).mockResolvedValue({ data: { items: [mockClient] } });
 
-    const { result } = renderHook(() => useClient());
+    const { result } = renderHook(() => useClient(), { wrapper: getHookWrapper() });
 
-    let clients: typeof mockClient[] | null = null;
+    let clients: (typeof mockClient)[] | null = null;
 
     await act(async () => {
       clients = await result.current.searchClients('Juan');
@@ -124,9 +125,9 @@ describe('useClient', () => {
   });
 
   it('should return empty array for empty search query', async () => {
-    const { result } = renderHook(() => useClient());
+    const { result } = renderHook(() => useClient(), { wrapper: getHookWrapper() });
 
-    let clients: typeof mockClient[] | null = null;
+    let clients: (typeof mockClient)[] | null = null;
 
     await act(async () => {
       clients = await result.current.searchClients('');
@@ -141,7 +142,7 @@ describe('useClient', () => {
       response: { data: { message: 'Error al cargar' } },
     });
 
-    const { result } = renderHook(() => useClient());
+    const { result } = renderHook(() => useClient(), { wrapper: getHookWrapper() });
 
     await expect(
       act(async () => {

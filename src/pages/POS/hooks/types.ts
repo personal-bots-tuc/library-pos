@@ -1,13 +1,19 @@
-import type { Product, CashShift, ShiftAggregated, Client, ClientListResponse } from "../components/types";
-import type { CashMovementAggregated } from "../components/CashMovementModal/types";
-import type { CartItem, SaleItem } from "../components/Cart/types";
+import type {
+  Product,
+  CashShift,
+  ShiftAggregated,
+  Client,
+  ClientListResponse,
+} from '../components/types';
+import type { CashMovementAggregated } from '../components/CashMovementModal/types';
+import type { CartItem } from '../components/Cart/types';
 
-export type OperationMode = "sale" | "quote" | "return";
+export type OperationMode = 'sale' | 'quote' | 'return';
 
 export interface PreviewSaleItem {
   product: string;
   name: string;
-  type: "product" | "service";
+  type: 'product' | 'service';
   quantity: number;
   unitPrice: number;
   unitCost?: number;
@@ -22,17 +28,17 @@ export interface PreviewSaleResult {
   total: number;
   amountReceived?: number;
   change?: number;
-  paymentMethod: "cash" | "transfer" | "credit";
+  paymentMethod: 'cash' | 'transfer' | 'credit';
   creditBalanceAfter?: number;
 }
 
 export interface ReceiptData {
   number: number;
-  type: "sale" | "quote" | "return";
+  type: 'sale' | 'quote' | 'return';
   items: Array<{
     product: string;
     name: string;
-    type: "product" | "service";
+    type: 'product' | 'service';
     quantity: number;
     unitPrice: number;
     unitCost?: number;
@@ -41,7 +47,7 @@ export interface ReceiptData {
   subtotal: number;
   discount: number;
   total: number;
-  paymentMethod?: "cash" | "transfer" | "credit";
+  paymentMethod?: 'cash' | 'transfer' | 'credit';
   amountReceived?: number;
   change?: number;
   client?: { id: string; fullName: string; balance: number } | null;
@@ -62,13 +68,21 @@ export interface UseShiftResult {
   loading: boolean;
   error: string | null;
   openShift: (openingAmount: number) => Promise<void>;
-  closeShift: (closingAmount: number, note?: string, aggregated?: CashMovementAggregated) => Promise<void>;
+  closeShift: (
+    closingAmount: number,
+    note?: string,
+    aggregated?: CashMovementAggregated
+  ) => Promise<void>;
   refetch: () => Promise<void>;
 }
 
 export interface UseClientResult {
   createClient: (data: { fullName: string; dni: string; phone?: string }) => Promise<Client>;
-  listClients: (params?: { search?: string; page?: number; limit?: number }) => Promise<ClientListResponse>;
+  listClients: (params?: {
+    search?: string;
+    page?: number;
+    limit?: number;
+  }) => Promise<ClientListResponse>;
   searchClients: (query: string) => Promise<Client[]>;
   loading: boolean;
   error: string | null;
@@ -88,14 +102,15 @@ export interface UseSaleResult {
     items: { product: string; quantity: number }[];
     clientId?: string;
     discount: number;
-    paymentMethod: "cash" | "transfer" | "credit";
+    paymentMethod: 'cash' | 'transfer' | 'credit';
     amountReceived: number;
+    expectedTotal?: number;
   }) => Promise<{ total: number; change: number; sale: SaleLean }>;
   previewSale: (params: {
     items: { product: string; quantity: number }[];
     clientId?: string;
     discount: number;
-    paymentMethod: "cash" | "transfer" | "credit";
+    paymentMethod: 'cash' | 'transfer' | 'credit';
     amountReceived?: number;
   }) => Promise<PreviewSaleResult>;
   loading: boolean;
@@ -110,14 +125,14 @@ export interface SaleLean {
   total: number;
   amountReceived: number;
   change: number;
-  paymentMethod: "cash" | "transfer" | "credit";
-  type: "sale" | "return";
+  paymentMethod: 'cash' | 'transfer' | 'credit';
+  type: 'sale' | 'return';
   client?: { id: string; fullName: string; balance: number } | null;
   seller: { id: string; name: string; role: string };
   items: Array<{
     product: string;
     name: string;
-    type: "product" | "service";
+    type: 'product' | 'service';
     quantity: number;
     unitPrice: number;
     unitCost?: number;
@@ -147,13 +162,13 @@ export interface QuoteLean {
   items: Array<{
     product: string;
     name: string;
-    type: "product" | "service";
+    type: 'product' | 'service';
     quantity: number;
     unitPrice: number;
     unitCost?: number;
     subtotal: number;
   }>;
-  status: "active" | "cancelled";
+  status: 'active' | 'cancelled';
   createdAt: string;
 }
 
@@ -161,7 +176,7 @@ export interface UseReturnResult {
   createReturn: (params: {
     items: { product: string; quantity: number }[];
     clientId?: string;
-    method: "cash" | "transfer" | "credit";
+    method: 'cash' | 'transfer' | 'credit';
   }) => Promise<{ sale: SaleLean }>;
   loading: boolean;
   error: string | null;
