@@ -41,9 +41,20 @@ async function postSale(
   return { total: data.sale.total, change: data.sale.change, sale: data.sale as SaleLean };
 }
 
+/**
+ * Contrato del API (staging/prod): items viajan como `{ productId, quantity }`.
+ * Internamente el POS modela el item como `{ product, quantity }` (CartItem);
+ * la conversión ocurre solo acá, en el borde HTTP.
+ */
+function toWireItems(
+  items: { product: string; quantity: number }[]
+): { productId: string; quantity: number }[] {
+  return items.map(i => ({ productId: i.product, quantity: i.quantity }));
+}
+
 function buildPayload(params: CheckoutParams, idempotencyKey: string) {
   return {
-    items: params.items,
+    items: toWireItems(params.items),
     clientId: params.clientId,
     discount: params.discount,
     paymentMethod: params.paymentMethod,
@@ -109,7 +120,7 @@ export function useSale(): UseSaleResult {
   const previewMutation = useMutation({
     mutationFn: async (params: PreviewParams) => {
       const { data } = await api.post('/sales/preview', {
-        items: params.items,
+        items: toWireItems(params.items),
         clientId: params.clientId,
         discount: params.discount,
         paymentMethod: params.paymentMethod,

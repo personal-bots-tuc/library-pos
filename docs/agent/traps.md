@@ -103,3 +103,17 @@ propio repo (el mismo path estaba correcto en `LoginPage.tsx`). No "reparar" cif
 a ojo.
 **Evidencia**: `src/pages/POS/components/POSHeader/POSHeader.tsx` ahora comparte el
 path exacto de `src/pages/LoginPage.tsx:253`.
+
+## Contrato del API: items viajan como `productId`, no `product` (POS-111, 2026-10-14)
+**Problema**: cobrar en staging devolvía
+`400 {"message":"Datos de entrada inválidos","details":{"body.items.N.productId":["Invalid input: expected string, received undefined"]}}`.
+El API nueva (hexagonal, `internal/handler/sales/sales.schemas.ts`) espera
+`items[].productId`; el API vieja aceptaba `items[].product` — por eso el mismo
+front "funcionaba" en prod y fallaba en staging sin haber tocado el código.
+**Regla**: el POS modela el item como `{ product, quantity }` (CartItem) y SOLO
+convierte en el borde HTTP — cada hook que postea items usa `toWireItems()`
+propio (`useSale.ts`, `useReturn.ts`, `useQuotes.ts`). Si el back cambia el
+contrato otra vez, el ajuste vive en UN punto por hook, no en el dominio.
+**Diagnóstico**: ante un 400 con `message: "Datos de entrada inválidos"`, mirar
+`details`: el field path (`body.items.0.productId`) dice EXACTAMENTE qué campo
+falla. No confundir con 404 (producto inexistente) ni 409 (sin turno abierto).

@@ -9,6 +9,13 @@ function errorMessage(err: unknown): string {
   );
 }
 
+/** Contrato del API: items viajan como `{ productId, quantity }`. */
+function toWireItems(
+  items: { product: string; quantity: number }[]
+): { productId: string; quantity: number }[] {
+  return items.map(i => ({ productId: i.product, quantity: i.quantity }));
+}
+
 export function useReturn(): UseReturnResult {
   const mutation = useMutation({
     mutationFn: async (params: {
@@ -21,7 +28,7 @@ export function useReturn(): UseReturnResult {
           ? crypto.randomUUID()
           : `return-${Date.now()}`;
       const { data } = await api.post('/sales/returns', {
-        items: params.items,
+        items: toWireItems(params.items),
         clientId: params.clientId,
         method: params.method,
         // Hoy el back lo descarta (Zod sin .strict()); activa deduplicación
