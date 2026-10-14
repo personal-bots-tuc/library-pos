@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Error SVG `<path> attribute d: Expected number` en consola (POS-110)** — el icono `building-library` del header del POS tenía un atributo `d` corrupto (copy/paste truncado: faltaba el segmento `c1.747 0 ... 4.5 1.253v13C19.832...`). Chrome/React DOM logueaba el error en cada render del header, ensuciando la consola durante el flujo de venta. Fix: path restaurado con la versión canónica de Heroicons (idéntica a la ya correcta de `LoginPage.tsx`).
 - **Crash IndexedDB tras login (POS-108 hotfix)** — los object stores de IndexedDB
   solo se crean en la primera apertura de la DB: un store por namespace (`rq-anon`
   en login) explotaba con `NotFoundError` para cualquier namespace posterior, y
