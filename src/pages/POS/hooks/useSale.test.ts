@@ -68,7 +68,7 @@ describe('useSale', () => {
     expect(result.current.error).toBeNull();
     expect(api.post).toHaveBeenCalledTimes(1);
     expect(api.post).toHaveBeenCalledWith('/sales', {
-      items: [{ product: 'prod-1', quantity: 2 }],
+      items: [{ productId: 'prod-1', quantity: 2 }],
       clientId: 'client-1',
       discount: 500,
       paymentMethod: 'cash',
@@ -241,6 +241,7 @@ describe('useSale', () => {
     expect(api.post).toHaveBeenCalledWith(
       '/sales/preview',
       expect.objectContaining({
+        items: [{ productId: 'prod-1', quantity: 2 }],
         paymentMethod: 'cash',
       })
     );
