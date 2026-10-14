@@ -79,3 +79,14 @@ llega al DOM (`useToast.viewport.test.tsx`). Además: las mutations NUNCA se
 persisten (`shouldDehydrateMutation: () => false`) — restaurar una mutation
 pausada la revivía tras cada recarga; y el cobro tiene watchdog 30s con
 reconciliación (`resolveAfterWatchdog`) ante API dormida/caída.
+
+## IndexedDB: object stores NO se crean en runtime (POS-108 hotfix, 2026-10-14)
+**Problema**: idb-keyval `createStore(db, name)` crea el store SOLO al abrir la DB
+con schema nuevo. Un store por namespace (`rq-anon` en login, `rq-<school>:<user>`
+post-login) explotaba para todo namespace posterior al primero
+(`NotFoundError: object store not found`) como rejection no capturada por
+persistClient en cada mutation.
+**Regla**: IndexedDB usa UN store fijo (`cache`) y los namespaces van en el prefijo
+de la key (`pos-query:<schoolId>:<userId>`). Para cambiar la forma de la DB:
+renombrarla (`*-v2`) y borrar la legacy en best-effort — nunca upgrades manuales.
+**Evidencia**: `src/lib/persistence.ts` + test de regresión multi-namespace.
