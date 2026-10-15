@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Categorías de producto en POS (POS-200)** — Tipo Product actualizado con `categoryId?` opcional, contratos documentados y validación de schema actualizada.
+
 ### Fixed
 
 - **Venta/preview/devolución/presupuesto fallaban con 400 en staging (POS-111)** — el API nueva (hexagonal) espera `items[].productId` en el body; el POS enviaba `items[].product` (contrato de la API vieja que sigue en producción, por eso main "funcionaba"). Fix: conversión `toWireItems()` en el borde HTTP de `useSale`, `useReturn` y `useQuotes` — el modelo interno (`CartItem.product`) no cambia. Tests actualizados para asertar el payload del wire.
