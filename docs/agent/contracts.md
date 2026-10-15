@@ -1,7 +1,7 @@
 ---
 type: Contracts
 version: <sha-corto>
-validated: 2026-10-05
+validated: 2026-10-15
 update_when: when API contracts, env vars, or external dependencies change
 scope:
   - src/api/
@@ -25,8 +25,9 @@ scope:
 - Headers: `x-school-id` (desde JWT)
 
 ### Products
-- `GET /products` → `Product[]` (filtros: search, category, page)
+- `GET /products` → `Product[]` (filtros: search, categoryId, page)
 - `GET /products/:id` → `Product`
+- `Product` shape: `{ id, name, type, price, stock, categoryId?, active, createdAt, updatedAt }`
 
 ### Clients
 - `GET /clients` → `Client[]` (search, page)

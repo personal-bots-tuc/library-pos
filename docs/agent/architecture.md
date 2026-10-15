@@ -1,7 +1,7 @@
 ---
 type: Architecture
 version: <sha-corto>
-validated: 2026-10-05
+validated: 2026-10-15
 update_when: when folder layout, layers, entrypoints, or critical flows change
 scope:
   - src

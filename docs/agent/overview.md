@@ -1,7 +1,7 @@
 ---
 type: Overview
 version: <sha-corto>
-validated: 2026-10-05
+validated: 2026-10-15
 update_when: when purpose, capabilities, or ownership change
 scope:
   - src/pages/POS
