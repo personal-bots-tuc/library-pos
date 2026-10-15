@@ -10,6 +10,7 @@ export interface Product {
   unit?: "unit" | "sheet" | "binding";
   code?: string;
   active: boolean;
+  categoryId?: string | null;
   createdAt: string;
   updatedAt: string;
 }
