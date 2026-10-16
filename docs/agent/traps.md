@@ -131,3 +131,8 @@ clientes…") para que el cajero sepa que está trabajando, no que está tildado
 `internal/repository/mongo/customers/client.schema.ts` y cambiar la query a
 `$text` en `mongoose-client-repository.ts`. Hasta entonces, el frontend reduce
 la frecuencia de requests pero no elimina la pausa por búsqueda.
+
+## Reset de campos del POS al finalizar venta (POS-202, 2026-10-16)
+**Problema**: al finalizar una venta, solo se vaciaba el carrito (`clearCart` en `completeSale`, `useSaleFlow.ts`). Los campos `discountValue`, `discountType`, `amountReceived`, `paymentMethod`, `selectedClient` y `search` se mantenían con los valores de la venta anterior, haciendo que un descuento aplicado se "filtrara" a la siguiente venta.
+**Causa raíz**: `clearSale()` (que resetea TODO, `usePOSPage.ts:184`) solo se invocaba al **confirmar** el modal de éxito (`POSPage.tsx:106`, `onConfirmSaleSuccess`). Al cerrar el modal por Escape o clic fuera (`onCloseSaleSuccess`), solo se cerraba el modal sin resetear.
+**Regla**: `onCloseSaleSuccess` también invoca `clearSale()`, así que al cerrar el modal de éxito por **cualquier vía** todos los campos vuelven al estado inicial. El reset ocurre **después del modal**, no inmediatamente tras el checkout, para no borrar datos si la venta falla y el cajero quiere reintentar.
