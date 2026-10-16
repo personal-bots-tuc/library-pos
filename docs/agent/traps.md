@@ -117,3 +117,17 @@ contrato otra vez, el ajuste vive en UN punto por hook, no en el dominio.
 **Diagnóstico**: ante un 400 con `message: "Datos de entrada inválidos"`, mirar
 `details`: el field path (`body.items.0.productId`) dice EXACTAMENTE qué campo
 falla. No confundir con 404 (producto inexistente) ni 409 (sin turno abierto).
+
+## ClientPicker: búsqueda por acción explícita, no por cada tecla (POS-201, 2026-10-16)
+**Problema**: al seleccionar un cliente, el POS quedaba "tildado" ~30s. El endpoint
+`GET /clients?search=...` del backend hace COLLSCAN en MongoDB (falta índice de
+texto en `fullName`, `dni`, `phone`; `$or` + `$regex` case-insensitive no usa
+índices B-tree). Antes el frontend disparaba 1 request por tecla (debounce 300ms),
+multiplicando la pausa.
+**Regla**: `ClientPicker` busca SOLO por acción explícita (Enter o botón
+"Buscar"), no por cada cambio de input. Se muestra estado de carga ("Buscando
+clientes…") para que el cajero sepa que está trabajando, no que está tildado.
+**Diagnóstico de raíz (backend pendiente)**: agregar índice de texto en
+`internal/repository/mongo/customers/client.schema.ts` y cambiar la query a
+`$text` en `mongoose-client-repository.ts`. Hasta entonces, el frontend reduce
+la frecuencia de requests pero no elimina la pausa por búsqueda.

@@ -28,3 +28,13 @@ Read these guides in order:
 When code changes, update the relevant guide in the same PR. Record new,
 non-obvious gotchas in traps.md. Review consumers before breaking a contract.
 Add a CHANGELOG.md entry ([Unreleased]) with ticket + PR links in the same PR.
+
+## Ticket naming convention (Jira → Git → PR)
+Usar siempre el formato incremental **`[POS-XXX]`** en commits, ramas y PRs.
+- **Formato:** `[POS-XXX]-descripcion` (ej. `[POS-201]-fix descuento visual en TOTAL`)
+- **Rama:** `feature/[POS-XXX]-descripcion` desde `develop`
+- **Commit:** `[POS-XXX]-descripcion` (validado por `.husky/commit-msg`)
+- **PR:** título debe incluir `[POS-XXX]`
+- **CHANGELOG:** referencia el ticket en la entrada `[Unreleased]`
+- **Numeración incremental:** tomar el último número usado en Jira/GitHub Projects y sumar 1 (ej. si el último es POS-200, el siguiente es POS-201). No saltar números ni reusar tickets cerrados.
+- **Documentar aquí:** cualquier cambio a esta convención se anota en este archivo.

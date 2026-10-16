@@ -1,5 +1,5 @@
-import { PaymentPanel } from "@/pages/POS/components/PaymentPanel/PaymentPanel.tsx";
-import type { PaymentSectionProps } from "./types";
+import { PaymentPanel } from '@/pages/POS/components/PaymentPanel/PaymentPanel.tsx';
+import type { PaymentSectionProps } from './types';
 
 export function PaymentSection({
   subtotal,
@@ -13,6 +13,7 @@ export function PaymentSection({
   setAmountReceived,
   change,
   discountAmount,
+  total,
   onCheckout,
   loading,
   disabled,
@@ -31,6 +32,7 @@ export function PaymentSection({
       setAmountReceived={setAmountReceived}
       change={change}
       discountAmount={discountAmount}
+      total={total}
       onCheckout={onCheckout}
       loading={loading}
       disabled={disabled}
