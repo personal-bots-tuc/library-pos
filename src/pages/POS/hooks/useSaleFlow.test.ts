@@ -81,4 +81,64 @@ describe('useSaleFlow - checkout exitoso no reseta campos de venta (reset solo t
     // showError se invoca con el mensaje
     expect(deps.showError).toHaveBeenCalledWith('Stock insuficiente');
   });
+
+  it('con carrito vacío no llama checkout ni clearCart (early return)', async () => {
+    const deps = makeDeps({ cart: [] });
+    const { result } = renderHook(() => useSaleFlow(deps), { wrapper: getHookWrapper() });
+
+    await act(async () => {
+      await result.current.handleCheckout();
+    });
+
+    // Carrito vacío: retorna temprano sin llamar checkout
+    expect(deps.checkout).not.toHaveBeenCalled();
+    expect(deps.clearCart).not.toHaveBeenCalled();
+    expect(deps.openReceipt).not.toHaveBeenCalled();
+    expect(deps.showError).not.toHaveBeenCalled();
+  });
+
+  it('con error de validación (cliente requerido para crédito) llama showError y no avanza', async () => {
+    const deps = makeDeps({
+      paymentMethod: 'credit' as const,
+      selectedClient: null,
+      amountReceived: '0',
+    });
+    const { result } = renderHook(() => useSaleFlow(deps), { wrapper: getHookWrapper() });
+
+    await act(async () => {
+      await result.current.handleCheckout();
+    });
+
+    // Validación falla: cliente requerido para crédito
+    expect(deps.checkout).not.toHaveBeenCalled();
+    expect(deps.clearCart).not.toHaveBeenCalled();
+    expect(deps.showError).toHaveBeenCalledWith('Seleccione un cliente para venta a crédito');
+  });
+
+  it('con error no-Error (string), showError muestra mensaje genérico', async () => {
+    const deps = makeDeps({
+      checkout: vi.fn().mockRejectedValue('Error de red simple'),
+    });
+    const { result } = renderHook(() => useSaleFlow(deps), { wrapper: getHookWrapper() });
+
+    await act(async () => {
+      await result.current.handleCheckout();
+    });
+
+    expect(deps.showError).toHaveBeenCalledWith('Error al procesar la venta');
+    expect(deps.clearCart).not.toHaveBeenCalled();
+  });
+
+  it('sin turno activo (activeShift null) retorna error y no avanza', async () => {
+    const deps = makeDeps({ activeShift: null });
+    const { result } = renderHook(() => useSaleFlow(deps), { wrapper: getHookWrapper() });
+
+    await act(async () => {
+      await result.current.handleCheckout();
+    });
+
+    expect(deps.checkout).not.toHaveBeenCalled();
+    expect(deps.clearCart).not.toHaveBeenCalled();
+    expect(deps.showError).toHaveBeenCalledWith('Debe abrir un turno de caja primero');
+  });
 });
