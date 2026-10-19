@@ -1,82 +1,99 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import api from "../../../api/client";
-import type { UseShiftResult } from "./types";
-import type { CashMovementAggregated } from "../components/CashMovementModal/types";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import api from '../../../api/client';
+import { useSyncGate } from '@/hooks/useSyncGate';
+import type { UseShiftResult } from './types';
+import type { CashShift, ShiftAggregated } from '../components/types';
+import type { CashMovementAggregated } from '../components/CashMovementModal/types';
 
+export const SHIFT_QUERY_KEY = ['cash-shifts', 'active'] as const;
+/** Turno activo: poll cada 60s solo con turno abierto + compuertas (aprobado). */
+export const SHIFT_POLL_INTERVAL_MS = 60_000;
+
+interface ActiveShiftResponse {
+  cashShift: CashShift | null;
+  aggregated: ShiftAggregated | null;
+}
+
+function toMessage(err: unknown): string | null {
+  if (!err) return null;
+  return (
+    (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+    'Error de red al operar turno'
+  );
+}
+
+/**
+ * Turno de caja — query NO persistida (dato volátil de negocio).
+ * Poll de 60s solo cuando: hay turno abierto ∧ pestaña visible ∧ usuario
+ * activo en los últimos 10 min. El foco de la ventana dispara refetch
+ * inmediato (refetchOnWindowFocus), cubriendo el cierre remoto desde admin.
+ */
 export function useShift(): UseShiftResult {
-  const [activeShift, setActiveShift] = useState<UseShiftResult["activeShift"]>(null);
-  const [shiftStats, setShiftStats] = useState<UseShiftResult["shiftStats"]>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const isMountedRef = useRef(true);
+  const queryClient = useQueryClient();
+  const syncAllowed = useSyncGate();
 
-  const fetchActiveShift = useCallback(async (isInitialLoad = false) => {
-    if (isInitialLoad) setLoading(true);
-    setError(null);
-    try {
-      const { data } = await api.get("/cash-shifts/active");
-      if (isMountedRef.current) {
-        setActiveShift(data.cashShift);
-        setShiftStats(data.aggregated);
-      }
-    } catch (err: any) {
-      if (isMountedRef.current) {
-        setError(err.response?.data?.message || "Error al cargar turno");
-      }
-    } finally {
-      if (isMountedRef.current) {
-        setLoading(false);
-      }
-    }
-  }, []);
+  const query = useQuery({
+    queryKey: SHIFT_QUERY_KEY,
+    queryFn: async () => {
+      const { data } = await api.get('/cash-shifts/active');
+      return data as ActiveShiftResponse;
+    },
+    staleTime: 0,
+    refetchInterval: q => (syncAllowed && q.state.data?.cashShift ? SHIFT_POLL_INTERVAL_MS : false),
+  });
 
-  const openShift = useCallback(async (openingAmount: number) => {
-    setError(null);
-    try {
-      await api.post("/cash-shifts/open", { openingAmount });
-      await fetchActiveShift(false);
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Error al abrir turno");
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchActiveShift]);
+  const openMutation = useMutation({
+    mutationFn: async (openingAmount: number) => {
+      await api.post('/cash-shifts/open', { openingAmount });
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: SHIFT_QUERY_KEY }),
+  });
 
-  const closeShift = useCallback(async (closingAmount: number, note?: string, aggregated?: CashMovementAggregated) => {
-    if (!activeShift) return;
-    setError(null);
-    try {
-      await api.post(`/cash-shifts/${activeShift.id}/close`, {
-        closingAmount,
-        note: note || "",
-        aggregated,
+  const closeMutation = useMutation({
+    mutationFn: async (params: {
+      id: string;
+      closingAmount: number;
+      note?: string;
+      aggregated?: CashMovementAggregated;
+    }) => {
+      await api.post(`/cash-shifts/${params.id}/close`, {
+        closingAmount: params.closingAmount,
+        note: params.note || '',
+        aggregated: params.aggregated,
       });
-      setActiveShift(null);
-      setShiftStats(null);
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Error al cerrar turno");
-      throw err;
-    }
-  }, [activeShift]);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: SHIFT_QUERY_KEY }),
+  });
 
-  useEffect(() => {
-    isMountedRef.current = true;
-    fetchActiveShift(true);
-    const interval = setInterval(() => fetchActiveShift(false), 10000);
-    return () => {
-      isMountedRef.current = false;
-      clearInterval(interval);
-    };
-  }, [fetchActiveShift]);
+  const activeShift = query.data?.cashShift ?? null;
+
+  const openShift = async (openingAmount: number) => {
+    await openMutation.mutateAsync(openingAmount);
+  };
+
+  const closeShift = async (
+    closingAmount: number,
+    note?: string,
+    aggregated?: CashMovementAggregated
+  ) => {
+    if (!activeShift) return;
+    await closeMutation.mutateAsync({
+      id: activeShift.id,
+      closingAmount,
+      note,
+      aggregated,
+    });
+  };
 
   return {
     activeShift,
-    shiftStats,
-    loading,
-    error,
+    shiftStats: query.data?.aggregated ?? null,
+    loading: query.isPending,
+    error: toMessage(query.error ?? openMutation.error ?? closeMutation.error),
     openShift,
     closeShift,
-    refetch: () => fetchActiveShift(false),
+    refetch: async () => {
+      await query.refetch();
+    },
   };
 }

@@ -36,11 +36,11 @@ feature/[POS-XXX]-desc ─PR+CI verde─► develop ─auto-deploy─► STAGING
 
 | Ambiente | Mecanismo | Rama | URL |
 |----------|-----------|------|-----|
-| Staging | Railway **auto-deploy** (watcher GitHub configurado y verificado 2026-10-08) | `develop` | https://library-pos-staging.up.railway.app |
-| Production | Railway **auto-deploy** (watcher `main`) | `main` | https://library-pos-production.up.railway.app |
+| Staging | Railway **auto-deploy** (watcher GitHub **configurado y verificado 2026-10-08**) | `develop` | https://library-pos-staging.up.railway.app |
+| Production | Railway **auto-deploy** (watcher `main` **configurado y verificado 2026-10-08**) | `main` | https://library-pos-production.up.railway.app |
 
-> Fallback manual si el watcher falla: `railway link -s library-pos -e <environment> && railway up -d -y` desde la rama correspondiente.
-> **Nota histórica:** este repo usó rama `master` como default; estandarizada a `main` el 2026-10-07. La rama remota `master` fue eliminada/deprecada tras migrar los watchers a `main`/`develop`.
+> **Watchers operativos:** branch watchers configurados en Railway Dashboard (staging→`develop`, production→`main`). Validado con push trivial a `develop` → auto-deploy staging confirmado (deployment `eb1959f2` SUCCESS).
+> **Nota histórica:** este repo usó rama `master` como default; estandarizada a `main` el 2026-10-07. La rama remota `master` queda huérfana hasta confirmar que ningún watcher la usa (ver §8 del doc maestro).
 
 Runtime: nginx non-root + `envsubst` en entrypoint genera `config.js` desde `config.template.js` con `VITE_API_BASE_URL`, `VITE_APP_NAME` (variables Railway por environment).
 

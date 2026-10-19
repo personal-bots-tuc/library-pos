@@ -1,46 +1,90 @@
-import { useState, useMemo, useCallback } from "react";
-import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/useToast";
-import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
-import { useProducts } from "./useProducts";
-import { useShift } from "./useShift";
-import { useCart } from "./useCart";
-import { useSale } from "./useSale";
-import { useClient } from "./useClient";
-import { useCashMovements } from "./useCashMovements";
-import { useModals } from "./useModals";
-import { useSaleFlow } from "./useSaleFlow";
-import { useShiftManager } from "./useShiftManager";
-import { useClientSelector } from "./useClientSelector";
-import { useQuotes } from "./useQuotes";
-import { useReturn } from "./useReturn";
-import type { Client } from "../components/types";
-import type { CashMovementAggregated } from "../components/CashMovementModal/types";
-import type { OperationMode, SaleLean, QuoteLean } from "./types";
+import { useState, useMemo, useCallback } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/useToast';
+import { useKeyboardShortcuts } from './useKeyboardShortcuts';
+import { useProducts } from './useProducts';
+import { useShift } from './useShift';
+import { useCart } from './useCart';
+import { useSale } from './useSale';
+import { useClient } from './useClient';
+import { useCashMovements } from './useCashMovements';
+import { useModals } from './useModals';
+import { useSaleFlow } from './useSaleFlow';
+import { useShiftManager } from './useShiftManager';
+import { useQuoteFlow } from './useQuoteFlow';
+import { useReturnFlow } from './useReturnFlow';
+import { useClientSelector } from './useClientSelector';
+import { useQuotes } from './useQuotes';
+import { useReturn } from './useReturn';
+import type { Client } from '../components/types';
+import type { OperationMode } from './types';
+
+function computeDiscountAmount(
+  discountType: '$' | '%',
+  discountValue: number,
+  subtotal: number
+): number {
+  if (discountType === '%') return Math.round(subtotal * (discountValue / 100));
+  return Math.min(discountValue, subtotal);
+}
+
+function computeChange(
+  paymentMethod: 'cash' | 'transfer' | 'credit',
+  amountReceived: string,
+  total: number
+): number {
+  const received = parseFloat(amountReceived) || 0;
+  if (paymentMethod === 'cash' || paymentMethod === 'transfer')
+    return Math.max(0, received - total);
+  return 0;
+}
+
+function computeAnyModalOpen(modals: ReturnType<typeof useModals>): boolean {
+  return Boolean(
+    modals.showOpenShift ||
+    modals.showCloseShift ||
+    modals.showShiftStatus ||
+    modals.showNewClient ||
+    modals.saleSuccess ||
+    modals.showReceipt
+  );
+}
+
+function computeLoading(...flags: boolean[]): boolean {
+  return flags.some(Boolean);
+}
 
 export function usePOSPage() {
   const { logout } = useAuth();
   const { success: showSuccess, error: showError } = useToast();
 
   // Operation mode state
-  const [operation, setOperation] = useState<OperationMode>("sale");
+  const [operation, setOperation] = useState<OperationMode>('sale');
 
   // UI State - search must be declared before useProducts
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const [discountValue, setDiscountValue] = useState(0);
-  const [discountType, setDiscountType] = useState<"$" | "%">("$");
-  const [paymentMethod, setPaymentMethod] = useState<"cash" | "transfer" | "credit">("cash");
-  const [amountReceived, setAmountReceived] = useState("");
+  const [discountType, setDiscountType] = useState<'$' | '%'>('$');
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer' | 'credit'>('cash');
+  const [amountReceived, setAmountReceived] = useState('');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [savingClient, setSavingClient] = useState(false);
 
   // Core hooks
-  const { products, refetch: refetchProducts } = useProducts(100, search);
-  const { activeShift, shiftStats, openShift, closeShift, loading: shiftLoading, refetch: refetchShift } = useShift();
+  // La búsqueda filtra client-side (ProductSearch); sin request por tecla.
+  const { products, refetch: refetchProducts } = useProducts(100);
+  const {
+    activeShift,
+    shiftStats,
+    openShift,
+    closeShift,
+    loading: shiftLoading,
+    refetch: refetchShift,
+  } = useShift();
   const { cart, addToCart, updateQuantity, removeItem, clearCart, subtotal } = useCart(products);
   const { checkout, previewSale, loading: saleLoading } = useSale();
   const { createClient, loading: clientLoading } = useClient();
-  const { aggregated: aggregatedMovements, createMovement: handleCreateCashMovement } = useCashMovements(activeShift?.id ?? null);
+  const { createMovement: handleCreateCashMovement } = useCashMovements(activeShift?.id ?? null);
   const { createQuote, loading: quoteLoading } = useQuotes();
   const { createReturn, loading: returnLoading } = useReturn();
 
@@ -48,114 +92,53 @@ export function usePOSPage() {
   const modals = useModals();
 
   // Computed
-  const discountAmount = useMemo(() => {
-    if (discountType === "%") return Math.round(subtotal * (discountValue / 100));
-    return Math.min(discountValue, subtotal);
-  }, [subtotal, discountValue, discountType]);
-
+  const discountAmount = useMemo(
+    () => computeDiscountAmount(discountType, discountValue, subtotal),
+    [subtotal, discountValue, discountType]
+  );
   const total = useMemo(() => Math.max(0, subtotal - discountAmount), [subtotal, discountAmount]);
-  const change = useMemo(() => {
-    const received = parseFloat(amountReceived) || 0;
-    if (paymentMethod === "cash" || paymentMethod === "transfer") {
-      return Math.max(0, received - total);
-    }
-    return 0;
-  }, [paymentMethod, amountReceived, total]);
+  const change = useMemo(
+    () => computeChange(paymentMethod, amountReceived, total),
+    [paymentMethod, amountReceived, total]
+  );
 
-  const anyModalOpen = modals.showOpenShift || modals.showCloseShift || modals.showShiftStatus || modals.showNewClient || !!modals.saleSuccess || modals.showReceipt;
+  const anyModalOpen = computeAnyModalOpen(modals);
   const hasCartItems = cart.length > 0;
-  const loading = saleLoading || clientLoading || savingClient || quoteLoading || returnLoading;
+  const loading = computeLoading(
+    saleLoading,
+    clientLoading,
+    savingClient,
+    quoteLoading,
+    returnLoading
+  );
 
-  // Dispatcher functions for different operations
-  const handleCheckoutQuote = useCallback(async () => {
-    if (cart.length === 0) return;
-    if (discountAmount > subtotal) {
-      showError("El descuento no puede ser mayor al subtotal");
-      return;
-    }
+  // Quote and return flows extracted to their own hooks (one-file-per-hook)
+  const { handleCheckoutQuote } = useQuoteFlow({
+    cart,
+    subtotal,
+    discountAmount,
+    selectedClient,
+    createQuote,
+    clearCart,
+    refetchProducts,
+    openReceipt: modals.openReceipt,
+    showError,
+    showSuccess,
+  });
 
-    try {
-      const items = cart.map((item) => ({
-        product: item.product,
-        quantity: item.quantity,
-      }));
-
-      const quote = await createQuote({
-        items,
-        clientId: selectedClient?.id,
-        discount: discountAmount,
-      });
-
-      // Build receipt data for quote
-      const receiptData = {
-        number: quote.number,
-        type: "quote" as const,
-        items: quote.items,
-        subtotal: quote.subtotal,
-        discount: quote.discount,
-        total: quote.total,
-        client: quote.client ?? null,
-        seller: quote.seller,
-        createdAt: quote.createdAt,
-      };
-
-      modals.openReceipt(receiptData);
-      clearCart();
-      await refetchProducts();
-      showSuccess("Presupuesto generado correctamente");
-    } catch (err: any) {
-      showError(err.message || "Error al generar el presupuesto");
-    }
-  }, [cart, subtotal, discountAmount, selectedClient, createQuote, clearCart, refetchProducts, modals, showError, showSuccess]);
-
-  const handleCheckoutReturn = useCallback(async () => {
-    if (!activeShift) {
-      showError("Debe abrir un turno de caja primero");
-      return;
-    }
-    if (cart.length === 0) return;
-    if (paymentMethod === "credit" && !selectedClient) {
-      showError("Seleccione un cliente para devolución a crédito");
-      return;
-    }
-
-    try {
-      const items = cart.map((item) => ({
-        product: item.product,
-        quantity: item.quantity,
-      }));
-
-      const { sale } = await createReturn({
-        items,
-        clientId: selectedClient?.id,
-        method: paymentMethod,
-      });
-
-      // Build receipt data for return
-      const receiptData = {
-        number: sale.number,
-        type: "return" as const,
-        items: sale.items,
-        subtotal: sale.subtotal,
-        discount: sale.discount,
-        total: sale.total,
-        paymentMethod: sale.paymentMethod,
-        amountReceived: sale.amountReceived,
-        change: sale.change,
-        client: sale.client ?? null,
-        seller: sale.seller,
-        createdAt: sale.createdAt,
-      };
-
-      modals.openReceipt(receiptData);
-      clearCart();
-      await refetchProducts();
-      await refetchShift();
-      showSuccess("Devolución procesada correctamente");
-    } catch (err: any) {
-      showError(err.message || "Error al procesar la devolución");
-    }
-  }, [activeShift, cart, paymentMethod, selectedClient, createReturn, clearCart, refetchProducts, refetchShift, modals, showError, showSuccess]);
+  const { handleCheckoutReturn } = useReturnFlow({
+    activeShift,
+    cart,
+    paymentMethod,
+    selectedClient,
+    createReturn,
+    clearCart,
+    refetchProducts,
+    refetchShift,
+    openReceipt: modals.openReceipt,
+    showError,
+    showSuccess,
+  });
 
   // Composed hooks - useSaleFlow now receives operation-aware checkout
   const { handleCheckout } = useSaleFlow({
@@ -201,34 +184,34 @@ export function usePOSPage() {
   const clearSale = useCallback(() => {
     clearCart();
     setDiscountValue(0);
-    setDiscountType("$");
-    setAmountReceived("");
-    setPaymentMethod("cash");
+    setDiscountType('$');
+    setAmountReceived('');
+    setPaymentMethod('cash');
     setSelectedClient(null);
-    setSearch("");
-    setOperation("sale");
+    setSearch('');
+    setOperation('sale');
   }, [clearCart]);
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
-    onSearch: () => document.getElementById("product-search")?.focus(),
-    onDiscount: () => document.getElementById("discount-input")?.focus(),
+    onSearch: () => document.getElementById('product-search')?.focus(),
+    onDiscount: () => document.getElementById('discount-input')?.focus(),
     onAmountReceived: () => {
-      if (paymentMethod === "cash" || paymentMethod === "transfer") {
-        document.getElementById("amount-received")?.focus();
+      if (paymentMethod === 'cash' || paymentMethod === 'transfer') {
+        document.getElementById('amount-received')?.focus();
       }
     },
     onNewClient: modals.openNewClient,
     onCheckout: () => {
       if (!loading && hasCartItems) {
         switch (operation) {
-          case "sale":
+          case 'sale':
             handleCheckout();
             break;
-          case "quote":
+          case 'quote':
             handleCheckoutQuote();
             break;
-          case "return":
+          case 'return':
             handleCheckoutReturn();
             break;
         }

@@ -9,7 +9,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
     <title>Sistema de Punto de Venta</title>
-    <!-- Runtime config - DEBE ir ANTES del module script -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#2563eb" />
+    <!-- Runtime config - DEBE ir ANTES del module script. NUNCA cacheado por el SW (sw.js hace passthrough). -->
     <script src="/config.js"></script>
   </head>
   <body>

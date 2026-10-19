@@ -1,13 +1,18 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../../api/client';
-import type { CashMovement, CashMovementAggregated, CashMovementType, CashMovementCategory } from '../components/CashMovementModal/types';
+import type {
+  CashMovement,
+  CashMovementAggregated,
+  CashMovementType,
+  CashMovementCategory,
+} from '../components/CashMovementModal/types';
 
 interface UseCashMovementsResult {
   movements: CashMovement[];
   aggregated: CashMovementAggregated | null;
   loading: boolean;
   error: string | null;
-  createMovement: (data: {
+  createMovement: (_data: {
     type: CashMovementType;
     category: CashMovementCategory;
     amount: number;
@@ -17,70 +22,74 @@ interface UseCashMovementsResult {
   fetchAggregated: () => Promise<void>;
 }
 
+function toMessage(err: unknown): string | null {
+  if (!err) return null;
+  return (
+    (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+    'Error de red en movimientos de caja'
+  );
+}
+
 export function useCashMovements(shiftId: string | null): UseCashMovementsResult {
-  const [movements, setMovements] = useState<CashMovement[]>([]);
-  const [aggregated, setAggregated] = useState<CashMovementAggregated | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const baseKey = ['cash-shifts', shiftId, 'movements'] as const;
 
-  const fetchMovements = useCallback(async () => {
-    if (!shiftId) return;
-    setLoading(true);
-    setError(null);
-    try {
+  const movementsQuery = useQuery({
+    queryKey: baseKey,
+    queryFn: async () => {
       const { data } = await api.get(`/cash-shifts/${shiftId}/movements`);
-      setMovements(data);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al cargar movimientos');
-    } finally {
-      setLoading(false);
-    }
-  }, [shiftId]);
+      return data as CashMovement[];
+    },
+    enabled: !!shiftId,
+  });
 
-  const fetchAggregated = useCallback(async () => {
-    if (!shiftId) return;
-    try {
+  const aggregatedQuery = useQuery({
+    queryKey: [...baseKey, 'aggregated'] as const,
+    queryFn: async () => {
       const { data } = await api.get(`/cash-shifts/${shiftId}/movements/aggregated`);
-      setAggregated(data);
-    } catch (err: any) {
-      console.error('[useCashMovements] Error fetching aggregated:', err);
-    }
-  }, [shiftId]);
+      return data as CashMovementAggregated;
+    },
+    enabled: !!shiftId,
+  });
 
-  // Auto-fetch on mount and when shiftId changes
-  useEffect(() => {
-    if (shiftId) {
-      fetchMovements();
-      fetchAggregated();
-    }
-  }, [shiftId, fetchMovements, fetchAggregated]);
+  const createMutation = useMutation({
+    mutationFn: async (movementData: {
+      type: CashMovementType;
+      category: CashMovementCategory;
+      amount: number;
+      description: string;
+    }) => {
+      await api.post(`/cash-shifts/${shiftId}/movements`, movementData);
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: baseKey }),
+        queryClient.invalidateQueries({ queryKey: [...baseKey, 'aggregated'] }),
+      ]);
+    },
+  });
 
-  const createMovement = useCallback(async (movementData: {
+  const createMovement = async (movementData: {
     type: CashMovementType;
     category: CashMovementCategory;
     amount: number;
     description: string;
   }) => {
     if (!shiftId) throw new Error('No hay turno activo');
-    setError(null);
-    try {
-      await api.post(`/cash-shifts/${shiftId}/movements`, movementData);
-      await fetchMovements();
-      await fetchAggregated();
-    } catch (err: any) {
-      const message = err.response?.data?.message || 'Error al registrar movimiento';
-      setError(message);
-      throw new Error(message);
-    }
-  }, [shiftId, fetchMovements, fetchAggregated]);
+    await createMutation.mutateAsync(movementData);
+  };
 
   return {
-    movements,
-    aggregated,
-    loading,
-    error,
+    movements: movementsQuery.data ?? [],
+    aggregated: aggregatedQuery.data ?? null,
+    loading: movementsQuery.isPending || createMutation.isPending,
+    error: toMessage(movementsQuery.error ?? createMutation.error),
     createMovement,
-    fetchMovements,
-    fetchAggregated,
+    fetchMovements: async () => {
+      if (shiftId) await movementsQuery.refetch();
+    },
+    fetchAggregated: async () => {
+      if (shiftId) await aggregatedQuery.refetch();
+    },
   };
 }

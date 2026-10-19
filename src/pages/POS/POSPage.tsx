@@ -1,5 +1,5 @@
-import { usePOSPage } from "./hooks/usePOSPage";
-import { POSLayout } from "./components/POSLayout";
+import { usePOSPage } from './hooks/usePOSPage';
+import { POSLayout } from './components/POSLayout';
 
 export default function POSPage() {
   const {
@@ -102,8 +102,14 @@ export default function POSPage() {
       showNewClient={showNewClient}
       onCloseNewClient={closeNewClient}
       saleSuccess={saleSuccess}
-      onCloseSaleSuccess={closeSaleSuccess}
-      onConfirmSaleSuccess={() => { closeSaleSuccess(); clearSale(); }}
+      onCloseSaleSuccess={() => {
+        closeSaleSuccess();
+        clearSale();
+      }}
+      onConfirmSaleSuccess={() => {
+        closeSaleSuccess();
+        clearSale();
+      }}
       discountAmount={discountAmount}
       total={total}
       change={change}

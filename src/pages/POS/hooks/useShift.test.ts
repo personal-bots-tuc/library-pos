@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useShift } from './useShift';
+import { getHookWrapper, createTestQueryClient } from '../../../test/utils';
 import api from '../../../api/client';
 
 const mockShift = {
@@ -36,7 +37,7 @@ describe('useShift', () => {
       data: { cashShift: mockShift, aggregated: mockAggregated },
     });
 
-    const { result } = renderHook(() => useShift());
+    const { result } = renderHook(() => useShift(), { wrapper: getHookWrapper() });
 
     expect(result.current.loading).toBe(true);
 
@@ -53,12 +54,13 @@ describe('useShift', () => {
       response: { data: { message: 'No hay turno activo' } },
     });
 
-    const { result } = renderHook(() => useShift());
+    const { result } = renderHook(() => useShift(), { wrapper: getHookWrapper() });
 
-    await waitFor(() => expect(result.current.loading).toBe(false), { timeout: 3000 });
+    await waitFor(() => expect(result.current.error).toBe('No hay turno activo'), {
+      timeout: 3000,
+    });
 
     expect(result.current.activeShift).toBeNull();
-    expect(result.current.error).toBe('No hay turno activo');
   });
 
   it('should open shift successfully', async () => {
@@ -67,7 +69,7 @@ describe('useShift', () => {
     });
     vi.mocked(api.post).mockResolvedValue({});
 
-    const { result } = renderHook(() => useShift());
+    const { result } = renderHook(() => useShift(), { wrapper: getHookWrapper() });
 
     await waitFor(() => expect(result.current.loading).toBe(false), { timeout: 3000 });
 
@@ -76,7 +78,7 @@ describe('useShift', () => {
     });
 
     expect(api.post).toHaveBeenCalledWith('/cash-shifts/open', { openingAmount: 10000 });
-    expect(api.get).toHaveBeenCalledTimes(2);
+    await waitFor(() => expect(api.get).toHaveBeenCalledTimes(2));
   });
 
   it('should handle open shift error', async () => {
@@ -87,7 +89,7 @@ describe('useShift', () => {
       response: { data: { message: 'Monto inválido' } },
     });
 
-    const { result } = renderHook(() => useShift());
+    const { result } = renderHook(() => useShift(), { wrapper: getHookWrapper() });
 
     await waitFor(() => expect(result.current.loading).toBe(false), { timeout: 3000 });
 
@@ -104,9 +106,14 @@ describe('useShift', () => {
     });
     vi.mocked(api.post).mockResolvedValue({});
 
-    const { result } = renderHook(() => useShift());
+    const { result } = renderHook(() => useShift(), { wrapper: getHookWrapper() });
 
     await waitFor(() => expect(result.current.loading).toBe(false), { timeout: 3000 });
+
+    // Tras el cierre, el refetch invalidado devuelve "sin turno activo"
+    vi.mocked(api.get).mockResolvedValue({
+      data: { cashShift: null, aggregated: null },
+    });
 
     await act(async () => {
       await result.current.closeShift(15000, 'Cierre normal');
@@ -117,8 +124,8 @@ describe('useShift', () => {
       note: 'Cierre normal',
       aggregated: undefined,
     });
-    expect(result.current.activeShift).toBeNull();
-    expect(result.current.shiftStats).toBeNull();
+    await waitFor(() => expect(result.current.activeShift).toBeNull(), { timeout: 3000 });
+    await waitFor(() => expect(result.current.shiftStats).toBeNull(), { timeout: 3000 });
   });
 
   it('should not close shift if no active shift', async () => {
@@ -126,7 +133,7 @@ describe('useShift', () => {
       data: { cashShift: null, aggregated: null },
     });
 
-    const { result } = renderHook(() => useShift());
+    const { result } = renderHook(() => useShift(), { wrapper: getHookWrapper() });
 
     await waitFor(() => expect(result.current.loading).toBe(false), { timeout: 3000 });
 
@@ -142,7 +149,7 @@ describe('useShift', () => {
       data: { cashShift: mockShift, aggregated: mockAggregated },
     });
 
-    const { result } = renderHook(() => useShift());
+    const { result } = renderHook(() => useShift(), { wrapper: getHookWrapper() });
 
     await waitFor(() => expect(result.current.loading).toBe(false), { timeout: 3000 });
 
@@ -155,7 +162,52 @@ describe('useShift', () => {
       await result.current.refetch();
     });
 
-    expect(result.current.activeShift).toEqual(newShift);
+    await waitFor(() => expect(result.current.activeShift).toEqual(newShift));
     expect(api.get).toHaveBeenCalledTimes(2);
+  });
+
+  it('should poll every 60s only while a shift is open and gates are open', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      vi.mocked(api.get).mockResolvedValue({
+        data: { cashShift: mockShift, aggregated: mockAggregated },
+      });
+
+      const client = createTestQueryClient();
+      const { result } = renderHook(() => useShift(), { wrapper: getHookWrapper(client) });
+
+      await waitFor(() => expect(result.current.loading).toBe(false), { timeout: 3000 });
+      expect(api.get).toHaveBeenCalledTimes(1);
+
+      // Con turno abierto + compuertas abiertas: avanza 60s → nuevo fetch
+      await act(async () => {
+        vi.advanceTimersByTime(60_000);
+      });
+      await waitFor(() => expect(api.get).toHaveBeenCalledTimes(2));
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('should not poll when there is no active shift', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      vi.mocked(api.get).mockResolvedValue({
+        data: { cashShift: null, aggregated: null },
+      });
+
+      const { result } = renderHook(() => useShift(), { wrapper: getHookWrapper() });
+
+      await waitFor(() => expect(result.current.loading).toBe(false), { timeout: 3000 });
+      expect(api.get).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        vi.advanceTimersByTime(5 * 60_000);
+      });
+      // Sin turno abierto no hay polling periódico
+      expect(api.get).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
