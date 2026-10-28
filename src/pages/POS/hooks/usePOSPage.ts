@@ -112,6 +112,20 @@ export function usePOSPage() {
     returnLoading
   );
 
+  // Reset completo de la venta: se usa al limpiar manualmente y al terminar
+  // cualquier operación (venta, presupuesto, devolución) para que nada se
+  // filtre a la siguiente. Se define antes de los flows para pasárselo.
+  const clearSale = useCallback(() => {
+    clearCart();
+    setDiscountValue(0);
+    setDiscountType('$');
+    setAmountReceived('');
+    setPaymentMethod('cash');
+    setSelectedClient(null);
+    setSearch('');
+    setOperation('sale');
+  }, [clearCart]);
+
   // Quote and return flows extracted to their own hooks (one-file-per-hook)
   const { handleCheckoutQuote } = useQuoteFlow({
     cart,
@@ -119,7 +133,7 @@ export function usePOSPage() {
     discountAmount,
     selectedClient,
     createQuote,
-    clearCart,
+    resetSale: clearSale,
     refetchProducts,
     openReceipt: modals.openReceipt,
     showError,
@@ -132,7 +146,7 @@ export function usePOSPage() {
     paymentMethod,
     selectedClient,
     createReturn,
-    clearCart,
+    resetSale: clearSale,
     refetchProducts,
     refetchShift,
     openReceipt: modals.openReceipt,
@@ -152,7 +166,7 @@ export function usePOSPage() {
     total,
     checkout,
     previewSale,
-    clearCart,
+    resetSale: clearSale,
     refetchProducts,
     refetchShift,
     showError,
@@ -179,18 +193,6 @@ export function usePOSPage() {
     closeNewClientModal: modals.closeNewClient,
     setSavingClient,
   });
-
-  // Clear sale - also resets operation to default
-  const clearSale = useCallback(() => {
-    clearCart();
-    setDiscountValue(0);
-    setDiscountType('$');
-    setAmountReceived('');
-    setPaymentMethod('cash');
-    setSelectedClient(null);
-    setSearch('');
-    setOperation('sale');
-  }, [clearCart]);
 
   // Keyboard shortcuts
   useKeyboardShortcuts({

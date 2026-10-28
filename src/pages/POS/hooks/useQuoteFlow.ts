@@ -13,7 +13,7 @@ export interface QuoteFlowDeps {
     clientId?: string;
     discount: number;
   }) => Promise<QuoteLean>;
-  clearCart: () => void;
+  resetSale: () => void;
   refetchProducts: () => Promise<void>;
   openReceipt: (_data: ReceiptData) => void;
   showError: (_msg: string) => void;
@@ -32,7 +32,7 @@ export function useQuoteFlow(deps: QuoteFlowDeps) {
     discountAmount,
     selectedClient,
     createQuote,
-    clearCart,
+    resetSale,
     refetchProducts,
     openReceipt,
     showError,
@@ -69,7 +69,7 @@ export function useQuoteFlow(deps: QuoteFlowDeps) {
         seller: quote.seller,
         createdAt: quote.createdAt,
       });
-      clearCart();
+      resetSale();
       await refetchProducts();
       showSuccess('Presupuesto generado correctamente');
     } catch (err) {
@@ -81,7 +81,7 @@ export function useQuoteFlow(deps: QuoteFlowDeps) {
     discountAmount,
     selectedClient,
     createQuote,
-    clearCart,
+    resetSale,
     refetchProducts,
     openReceipt,
     showError,

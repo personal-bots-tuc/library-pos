@@ -27,7 +27,7 @@ function makeDeps(overrides: Partial<Parameters<typeof useSaleFlow>[0]> = {}) {
     total: 1000,
     checkout: vi.fn().mockResolvedValue({ total: 1000, change: 0, sale: { id: 's1', number: 3 } }),
     previewSale: vi.fn().mockResolvedValue({ total: 1000 }),
-    clearCart: vi.fn(),
+    resetSale: vi.fn(),
     refetchProducts: vi.fn().mockResolvedValue(undefined),
     refetchShift: vi.fn().mockResolvedValue(undefined),
     showError: vi.fn(),
@@ -77,7 +77,7 @@ describe('useSaleFlow watchdog (POS bloqueado cuando la API no responde)', () =>
     );
     // ... no se encontró la venta → error CLARO y NO se limpió el carrito
     expect(deps.showError).toHaveBeenCalledWith(expect.stringContaining('No se pudo confirmar'));
-    expect(deps.clearCart).not.toHaveBeenCalled();
+    expect(deps.resetSale).not.toHaveBeenCalled();
     expect(deps.openReceipt).not.toHaveBeenCalled();
 
     // Flujo liberado: un segundo cobrar vuelve a intentar
@@ -134,7 +134,7 @@ describe('useSaleFlow watchdog (POS bloqueado cuando la API no responde)', () =>
     });
 
     expect(deps.openReceipt).toHaveBeenCalledWith(expect.objectContaining({ number: 42 }));
-    expect(deps.clearCart).toHaveBeenCalled();
+    expect(deps.resetSale).toHaveBeenCalled();
     expect(deps.showSuccess).toHaveBeenCalled();
   });
 

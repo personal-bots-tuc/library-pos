@@ -64,12 +64,33 @@ vi.mock('./useModals', () => ({
     closeAll: vi.fn(),
   }),
 }));
-vi.mock('./useSaleFlow', () => ({ useSaleFlow: () => ({ handleCheckout: vi.fn() }) }));
+// Capturan las deps que usePOSPage les pasa, para probar el cableado de resetSale
+const capturedFlowDeps = vi.hoisted(() => ({
+  sale: null as null | { resetSale: () => void },
+  quote: null as null | { resetSale: () => void },
+  ret: null as null | { resetSale: () => void },
+}));
+vi.mock('./useSaleFlow', () => ({
+  useSaleFlow: (deps: { resetSale: () => void }) => {
+    capturedFlowDeps.sale = deps;
+    return { handleCheckout: vi.fn() };
+  },
+}));
 vi.mock('./useShiftManager', () => ({
   useShiftManager: () => ({ handleOpenShift: vi.fn(), handleCloseShift: vi.fn() }),
 }));
-vi.mock('./useQuoteFlow', () => ({ useQuoteFlow: () => ({ handleCheckoutQuote: vi.fn() }) }));
-vi.mock('./useReturnFlow', () => ({ useReturnFlow: () => ({ handleCheckoutReturn: vi.fn() }) }));
+vi.mock('./useQuoteFlow', () => ({
+  useQuoteFlow: (deps: { resetSale: () => void }) => {
+    capturedFlowDeps.quote = deps;
+    return { handleCheckoutQuote: vi.fn() };
+  },
+}));
+vi.mock('./useReturnFlow', () => ({
+  useReturnFlow: (deps: { resetSale: () => void }) => {
+    capturedFlowDeps.ret = deps;
+    return { handleCheckoutReturn: vi.fn() };
+  },
+}));
 vi.mock('./useClientSelector', () => ({
   useClientSelector: () => ({ handleCreateClient: vi.fn() }),
 }));
@@ -133,5 +154,54 @@ describe('usePOSPage - clearSale resetea todos los campos de venta', () => {
     // discountAmount se recalcula sobre valores reset (descuento = 0)
     expect(result.current.discountAmount).toBe(0);
     // clearCart también se invoca dentro de clearSale (resetea carrito/subtotal)
+  });
+});
+
+describe('usePOSPage - resetSale que reciben los flujos de venta (POS-204)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    capturedFlowDeps.sale = null;
+    capturedFlowDeps.quote = null;
+    capturedFlowDeps.ret = null;
+  });
+
+  it('useSaleFlow recibe un resetSale que limpia el descuento de la venta anterior', () => {
+    const { result } = renderHook(() => usePOSPage(), { wrapper: getHookWrapper() });
+
+    act(() => {
+      result.current.setDiscountValue(200);
+    });
+    expect(result.current.discountValue).toBe(200);
+
+    // Simula el cobro exitoso: el flujo llama a resetSale al completar la venta
+    act(() => {
+      capturedFlowDeps.sale?.resetSale();
+    });
+
+    expect(result.current.discountValue).toBe(0);
+    expect(result.current.discountType).toBe('$');
+  });
+
+  it('useQuoteFlow y useReturnFlow reciben el mismo reset completo', () => {
+    const { result } = renderHook(() => usePOSPage(), { wrapper: getHookWrapper() });
+
+    act(() => {
+      result.current.setDiscountValue(15);
+      result.current.setDiscountType('%');
+    });
+
+    act(() => {
+      capturedFlowDeps.quote?.resetSale();
+    });
+    expect(result.current.discountValue).toBe(0);
+    expect(result.current.discountType).toBe('$');
+
+    act(() => {
+      result.current.setDiscountValue(50);
+    });
+    act(() => {
+      capturedFlowDeps.ret?.resetSale();
+    });
+    expect(result.current.discountValue).toBe(0);
   });
 });
