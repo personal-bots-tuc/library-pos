@@ -28,7 +28,7 @@ function makeDeps(overrides: Partial<Parameters<typeof useSaleFlow>[0]> = {}) {
       .fn()
       .mockResolvedValue({ total: 8000, change: 4000, sale: { id: 's1', number: 3 } }),
     previewSale: vi.fn().mockResolvedValue({ total: 8000 }),
-    clearCart: vi.fn(),
+    resetSale: vi.fn(),
     refetchProducts: vi.fn().mockResolvedValue(undefined),
     refetchShift: vi.fn().mockResolvedValue(undefined),
     showError: vi.fn(),
@@ -38,13 +38,13 @@ function makeDeps(overrides: Partial<Parameters<typeof useSaleFlow>[0]> = {}) {
   };
 }
 
-describe('useSaleFlow - checkout exitoso no reseta campos de venta (reset solo tras modal)', () => {
+describe('useSaleFlow - checkout exitoso resetea la venta completa (POS-204)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.setItem('user', JSON.stringify({ id: 'seller-1', schoolId: 'school-1' }));
   });
 
-  it('tras checkout exitoso llama clearCart y openReceipt, pero no hay reset de descuento/cliente/monto', async () => {
+  it('tras checkout exitoso llama resetSale (no solo clearCart) y abre el recibo', async () => {
     const deps = makeDeps();
     const { result } = renderHook(() => useSaleFlow(deps), { wrapper: getHookWrapper() });
 
@@ -52,8 +52,8 @@ describe('useSaleFlow - checkout exitoso no reseta campos de venta (reset solo t
       await result.current.handleCheckout();
     });
 
-    // Se vacía el carrito (clearCart sí se llama)
-    expect(deps.clearCart).toHaveBeenCalledTimes(1);
+    // El reset completo corre al confirmar la venta, no al cerrar un modal
+    expect(deps.resetSale).toHaveBeenCalledTimes(1);
     // Se abre el recibo
     expect(deps.openReceipt).toHaveBeenCalledWith(expect.objectContaining({ number: 3 }));
     // Se muestra éxito
@@ -64,7 +64,7 @@ describe('useSaleFlow - checkout exitoso no reseta campos de venta (reset solo t
     expect(deps.checkout).toHaveBeenCalledWith(expect.objectContaining({ discount: 2000 }));
   });
 
-  it('si el checkout falla, no se llama clearCart ni se resetea nada', async () => {
+  it('si el checkout falla, no se llama resetSale ni se resetea nada', async () => {
     const deps = makeDeps({
       checkout: vi.fn().mockRejectedValue(new Error('Stock insuficiente')),
     });
@@ -74,15 +74,15 @@ describe('useSaleFlow - checkout exitoso no reseta campos de venta (reset solo t
       await result.current.handleCheckout();
     });
 
-    // clearCart NO se llama en caso de error
-    expect(deps.clearCart).not.toHaveBeenCalled();
+    // resetSale NO se llama en caso de error (el cajero puede reintentar con los mismos datos)
+    expect(deps.resetSale).not.toHaveBeenCalled();
     // openReceipt NO se llama
     expect(deps.openReceipt).not.toHaveBeenCalled();
     // showError se invoca con el mensaje
     expect(deps.showError).toHaveBeenCalledWith('Stock insuficiente');
   });
 
-  it('con carrito vacío no llama checkout ni clearCart (early return)', async () => {
+  it('con carrito vacío no llama checkout ni resetSale (early return)', async () => {
     const deps = makeDeps({ cart: [] });
     const { result } = renderHook(() => useSaleFlow(deps), { wrapper: getHookWrapper() });
 
@@ -92,7 +92,7 @@ describe('useSaleFlow - checkout exitoso no reseta campos de venta (reset solo t
 
     // Carrito vacío: retorna temprano sin llamar checkout
     expect(deps.checkout).not.toHaveBeenCalled();
-    expect(deps.clearCart).not.toHaveBeenCalled();
+    expect(deps.resetSale).not.toHaveBeenCalled();
     expect(deps.openReceipt).not.toHaveBeenCalled();
     expect(deps.showError).not.toHaveBeenCalled();
   });
@@ -111,7 +111,7 @@ describe('useSaleFlow - checkout exitoso no reseta campos de venta (reset solo t
 
     // Validación falla: cliente requerido para crédito
     expect(deps.checkout).not.toHaveBeenCalled();
-    expect(deps.clearCart).not.toHaveBeenCalled();
+    expect(deps.resetSale).not.toHaveBeenCalled();
     expect(deps.showError).toHaveBeenCalledWith('Seleccione un cliente para venta a crédito');
   });
 
@@ -126,7 +126,7 @@ describe('useSaleFlow - checkout exitoso no reseta campos de venta (reset solo t
     });
 
     expect(deps.showError).toHaveBeenCalledWith('Error al procesar la venta');
-    expect(deps.clearCart).not.toHaveBeenCalled();
+    expect(deps.resetSale).not.toHaveBeenCalled();
   });
 
   it('sin turno activo (activeShift null) retorna error y no avanza', async () => {
@@ -138,7 +138,7 @@ describe('useSaleFlow - checkout exitoso no reseta campos de venta (reset solo t
     });
 
     expect(deps.checkout).not.toHaveBeenCalled();
-    expect(deps.clearCart).not.toHaveBeenCalled();
+    expect(deps.resetSale).not.toHaveBeenCalled();
     expect(deps.showError).toHaveBeenCalledWith('Debe abrir un turno de caja primero');
   });
 });

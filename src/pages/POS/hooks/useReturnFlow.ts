@@ -15,7 +15,7 @@ export interface ReturnFlowDeps {
     clientId?: string;
     method: PaymentMethod;
   }) => Promise<{ sale: SaleLean }>;
-  clearCart: () => void;
+  resetSale: () => void;
   refetchProducts: () => Promise<void>;
   refetchShift: () => Promise<void>;
   openReceipt: (_data: ReceiptData) => void;
@@ -35,7 +35,7 @@ export function useReturnFlow(deps: ReturnFlowDeps) {
     paymentMethod,
     selectedClient,
     createReturn,
-    clearCart,
+    resetSale,
     refetchProducts,
     refetchShift,
     openReceipt,
@@ -80,7 +80,7 @@ export function useReturnFlow(deps: ReturnFlowDeps) {
         seller: sale.seller,
         createdAt: sale.createdAt,
       });
-      clearCart();
+      resetSale();
       await refetchProducts();
       await refetchShift();
       showSuccess('Devolución procesada correctamente');
@@ -93,7 +93,7 @@ export function useReturnFlow(deps: ReturnFlowDeps) {
     paymentMethod,
     selectedClient,
     createReturn,
-    clearCart,
+    resetSale,
     refetchProducts,
     refetchShift,
     openReceipt,

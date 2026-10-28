@@ -132,7 +132,8 @@ clientes…") para que el cajero sepa que está trabajando, no que está tildado
 `$text` en `mongoose-client-repository.ts`. Hasta entonces, el frontend reduce
 la frecuencia de requests pero no elimina la pausa por búsqueda.
 
-## Reset de campos del POS al finalizar venta (POS-202, 2026-10-16)
-**Problema**: al finalizar una venta, solo se vaciaba el carrito (`clearCart` en `completeSale`, `useSaleFlow.ts`). Los campos `discountValue`, `discountType`, `amountReceived`, `paymentMethod`, `selectedClient` y `search` se mantenían con los valores de la venta anterior, haciendo que un descuento aplicado se "filtrara" a la siguiente venta.
-**Causa raíz**: `clearSale()` (que resetea TODO, `usePOSPage.ts:184`) solo se invocaba al **confirmar** el modal de éxito (`POSPage.tsx:106`, `onConfirmSaleSuccess`). Al cerrar el modal por Escape o clic fuera (`onCloseSaleSuccess`), solo se cerraba el modal sin resetear.
-**Regla**: `onCloseSaleSuccess` también invoca `clearSale()`, así que al cerrar el modal de éxito por **cualquier vía** todos los campos vuelven al estado inicial. El reset ocurre **después del modal**, no inmediatamente tras el checkout, para no borrar datos si la venta falla y el cajero quiere reintentar.
+## Reset de la venta al completar operación (POS-202 y POS-204, 2026-10-16 / 2026-10-28)
+**Problema**: al completar una venta, un presupuesto o una devolución, solo se vaciaba el carrito (`clearCart`). Los campos `discountValue`, `discountType`, `amountReceived`, `paymentMethod`, `selectedClient` y `search` se mantenían, así que un descuento se "filtraba" a la siguiente venta.
+**Causa raíz**: el reset completo (`clearSale`, `usePOSPage.ts`) se llamaba solo desde el botón limpiar, el atajo de teclado y `SaleSuccessModal`. Ese modal **nunca se abre**: el flujo real abre `ReceiptModal`, que cierra sin resetear. POS-202 había enganchado el fix a `SaleSuccessModal`, por eso no tuvo efecto.
+**Regla**: el reset completo se pasa a los flujos como `resetSale` (`useSaleFlow`, `useQuoteFlow`, `useReturnFlow`) y se ejecuta al completar la operación con éxito. No se ejecuta al cerrar un modal, ni tras un error de cobro: así no se borran datos si la venta falla y el cajero quiere reintentar. Cualquier flujo nuevo que termine una operación debe llamar `resetSale`, no `clearCart`.
+**Ver**: tests de cableado en `usePOSPage.test.ts` ("resetSale que reciben los flujos de venta").

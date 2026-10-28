@@ -72,7 +72,8 @@ export interface SaleFlowDeps {
     paymentMethod: PaymentMethod;
     amountReceived?: number;
   }) => Promise<PreviewSaleResult>;
-  clearCart: () => void;
+  /** Reset completo de la venta (incluye carrito, descuento, cliente, etc.). */
+  resetSale: () => void;
   refetchProducts: () => Promise<void>;
   refetchShift: () => Promise<void>;
   showError: (_msg: string) => void;
@@ -153,7 +154,7 @@ async function resolveAfterWatchdog(attempt: SaleAttempt): Promise<{ sale: SaleL
 
 interface FinishDeps {
   openReceipt: (_data: ReceiptData) => void;
-  clearCart: () => void;
+  resetSale: () => void;
   refetchProducts: () => Promise<void>;
   refetchShift: () => Promise<void>;
   showError: (_msg: string) => void;
@@ -162,7 +163,7 @@ interface FinishDeps {
 
 async function completeSale(sale: SaleLean, helpers: FinishDeps) {
   helpers.openReceipt(buildReceiptData(sale));
-  helpers.clearCart();
+  helpers.resetSale();
   await helpers.refetchProducts();
   await helpers.refetchShift();
   helpers.showSuccess('Venta procesada correctamente');
@@ -198,7 +199,7 @@ export function useSaleFlow(deps: SaleFlowDeps) {
     total,
     checkout,
     previewSale,
-    clearCart,
+    resetSale,
     refetchProducts,
     refetchShift,
     showError,
@@ -254,7 +255,7 @@ export function useSaleFlow(deps: SaleFlowDeps) {
 
       await finishCheckout(outcome, attempt, {
         openReceipt,
-        clearCart,
+        resetSale,
         refetchProducts,
         refetchShift,
         showError,
@@ -275,7 +276,7 @@ export function useSaleFlow(deps: SaleFlowDeps) {
     total,
     checkout,
     previewSale,
-    clearCart,
+    resetSale,
     refetchProducts,
     refetchShift,
     showError,
